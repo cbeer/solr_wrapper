@@ -6,11 +6,11 @@ module SolrWrapper
     "5.0.0"
   end
 
-  def self.default_instance
-    @default_instance ||= SolrWrapper::Instance.new
+  def self.default_instance options
+    @default_instance ||= SolrWrapper::Instance.new options
   end
 
-  def self.wrap &block
-    default_instance.wrap &block
+  def self.wrap options = {}, &block
+    default_instance(options).wrap &block
   end
 end

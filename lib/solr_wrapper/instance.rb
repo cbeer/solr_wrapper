@@ -2,6 +2,7 @@ require 'digest'
 require 'fileutils'
 require 'open-uri'
 require 'progressbar'
+require 'securerandom'
 require 'tmpdir'
 require 'zip'
 
@@ -42,10 +43,6 @@ module SolrWrapper
 
     def started?
       !!@started
-    end
-
-    def started! status = true
-      @started = status
     end
 
     def extract
@@ -103,6 +100,35 @@ module SolrWrapper
 
     def port
       options.fetch(:port, "8983")
+    end
+
+    def create options = {}
+      options[:name] ||= SecureRandom.hex
+
+      IO.popen([solr_binary, "create", "-c", options[:name], "-d", options[:dir], "-p", port, err: [:child, :out]]) do |io|
+        if verbose?
+          IO.copy_stream(io,$stderr)
+        end
+      end
+
+      options[:name]
+    end
+    
+    def delete name, options = {}
+      IO.popen([solr_binary, "delete", "-c", name, "-p", port, err: [:child, :out]]) do |io|
+        if verbose?
+          IO.copy_stream(io,$stderr)
+        end
+      end
+    end
+
+    def with_collection options = {}
+      name = create(options)
+      begin
+        yield name
+      ensure
+        delete name
+      end
     end
 
     private
@@ -172,9 +198,17 @@ module SolrWrapper
     def solr_binary
       File.join(solr_dir, "bin", "solr")
     end
+    
+    def started! status = true
+      @started = status
+    end
 
     def verbose?
-      !!options[:verbose]
+      !!options.fetch(:verbose, false)
+    end
+
+    def managed?
+      !!options.fetch(:managed, true)
     end
   end
 end
