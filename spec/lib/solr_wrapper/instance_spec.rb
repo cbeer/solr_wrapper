@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe SolrWrapper::Instance do
-  subject { SolrWrapper::Instance.new verbose: true}
+  subject { SolrWrapper::Instance.new }
   let(:client) { SimpleSolrClient::Client.new("http://localhost:#{subject.port}/solr/") }
   describe "#with_collection" do
     it "should create a new anonymous collection" do

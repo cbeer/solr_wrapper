@@ -1,7 +1,7 @@
 require 'digest'
 require 'fileutils'
 require 'open-uri'
-require 'progressbar'
+require 'ruby-progressbar'
 require 'securerandom'
 require 'tmpdir'
 require 'zip'
@@ -77,15 +77,14 @@ module SolrWrapper
 
     def download
       unless File.exists? download_path and md5sum(download_path) == expected_md5sum
-        pbar = ProgressBar.new("solr", nil)
+        pbar = ProgressBar.create(title: File.basename(url), total: nil, format: "%t: |%B| %p%% (%e )")
         open(url, content_length_proc: lambda {|t|
           if t && 0 < t
             pbar.total = t
-            pbar.file_transfer_mode
           end
           },
           progress_proc: lambda {|s|
-            pbar.set s if pbar
+            pbar.progress = s
           }) do |io|
           IO.copy_stream(io,download_path)
         end
@@ -142,15 +141,14 @@ module SolrWrapper
 
     def md5file
       unless File.exists? md5sum_path
-        pbar = ProgressBar.new("md5", nil)
+        pbar = ProgressBar.create(title: File.basename(md5url), total: nil, format: "%t: |%B| %p%% (%e )")
         open(md5url, content_length_proc: lambda {|t|
           if t && 0 < t
             pbar.total = t
-            pbar.file_transfer_mode
           end
         },
         progress_proc: lambda {|s|
-          pbar.set s if pbar
+          pbar.progress = s
         }) do |io|
           IO.copy_stream(io, md5sum_path)
         end
