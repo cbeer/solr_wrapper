@@ -31,13 +31,17 @@ module SolrWrapper
         else
           IO.copy_stream(io, stringio)
         end
-        _, status = Process.wait2(io.pid)
-        if status != 0
+        _, exit_status = Process.wait2(io.pid)
+        if exit_status != 0
           stringio.rewind
           raise "Unable to start solr: #{stringio.read}"
         end
       end if managed?
 
+      # Wait for solr to start
+      unless status
+        sleep 1
+      end
       started!
     end
 
@@ -51,11 +55,16 @@ module SolrWrapper
         else
           IO.copy_stream(io, stringio)
         end
-        _, status = Process.wait2(io.pid)
+        _, exit_status = Process.wait2(io.pid)
 
-        if status != 0
+        if exit_status != 0
           stringio.rewind
           raise "Unable to start solr: #{stringio.read}"
+        end
+
+        # Wait for solr to stop
+        while status
+          sleep 1
         end
       end if managed?
     end
@@ -68,17 +77,16 @@ module SolrWrapper
       IO.popen([solr_binary, "status", "-p", port, err: [:child, :out]]) do |io|
         IO.copy_stream(io, stringio)
 
-        _, status = Process.wait2(io.pid)
+        _, exit_status = Process.wait2(io.pid)
 
         stringio.rewind
 
-        if status != 0
+        if exit_status != 0
           raise "Unable to query solr status: #{stringio.read}"
         end
       end
 
       out = stringio.read
-
       out =~ /running on port #{port}/
     end
 
@@ -116,7 +124,7 @@ module SolrWrapper
 
       solr_dir
     ensure
-      FileUtils.remove_entry tmp_save_dir
+      FileUtils.remove_entry tmp_save_dir if File.exists? tmp_save_dir
     end
 
     def download
@@ -253,12 +261,16 @@ module SolrWrapper
       !!options.fetch(:managed, true)
     end
 
+    def version_file
+      options.fetch(:version_file, File.join(solr_dir, "VERSION"))
+    end
+
     def extracted_version
-      File.read(File.join(solr_dir, "VERSION")).strip
+      File.read(version_file).strip if File.exists? version_file
     end
 
     def extracted_version= version
-      File.open(File.join(solr_dir, "VERSION"), "w") do |f|
+      File.open(version_file, "w") do |f|
         f.puts version
       end
     end
