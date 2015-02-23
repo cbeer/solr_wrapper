@@ -10,6 +10,8 @@ module SolrWrapper
     @default_instance ||= SolrWrapper::Instance.new options
   end
 
+  ##
+  # Ensures a Solr service is running before executing the block
   def self.wrap options = {}, &block
     default_instance(options).wrap &block
   end
