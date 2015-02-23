@@ -8,8 +8,10 @@ describe SolrWrapper::Instance do
       subject.wrap do |solr|
         solr.with_collection(dir: File.join(FIXTURES_DIR, "basic_configs")) do |collection_name|
           core = client.core(collection_name)
-          expect(core.schema.field('id').name).to eq 'id'
-          expect(core.schema.field('id').stored).to eq true
+          unless defined? JRUBY_VERSION
+            expect(core.schema.field('id').name).to eq 'id'
+            expect(core.schema.field('id').stored).to eq true
+          end
         end
       end
     end

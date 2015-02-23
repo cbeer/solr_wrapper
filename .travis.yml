@@ -2,3 +2,7 @@ language: ruby
 sudo: false
 rvm:
   - 2.2.0
+  - jruby
+cache:
+  directories:
+  - /tmp/solr-5.0.0

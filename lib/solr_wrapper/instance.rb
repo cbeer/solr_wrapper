@@ -239,20 +239,46 @@ module SolrWrapper
     end
     
     def exec cmd, options = {}
-      IO.popen([solr_binary, cmd] + options.map { |k,v| ["-#{k}", "#{v}"] }.flatten, "-p", port, + [err: [:child, :out]]) do |io|
+      args = [solr_binary, cmd] + options.map { |k,v| ["-#{k}", "#{v}"] }.flatten
+
+      if IO.respond_to? :popen4
+        # JRuby
+        pid, input, output, error = IO.popen4(args.join(" "))
+        
         stringio = StringIO.new
         if verbose?
-          IO.copy_stream(io,$stderr)
+          IO.copy_stream(output,$stderr)
+          IO.copy_stream(error,$stderr)
         else
-          IO.copy_stream(io, stringio)
+          IO.copy_stream(output, stringio)
+          IO.copy_stream(error, stringio)
         end
-        _, exit_status = Process.wait2(io.pid)
-        if exit_status != 0
+        input.close
+        output.close
+        error.close
+
+        if $? != 0
           stringio.rewind
           raise "Failed to execute solr #{cmd}: #{stringio.read}"
         end
 
         stringio
+      else
+        IO.popen(args + [err: [:child, :out]]) do |io|
+          stringio = StringIO.new
+          if verbose?
+            IO.copy_stream(io,$stderr)
+          else
+            IO.copy_stream(io, stringio)
+          end
+          _, exit_status = Process.wait2(io.pid)
+          if exit_status != 0
+            stringio.rewind
+            raise "Failed to execute solr #{cmd}: #{stringio.read}"
+          end
+
+          stringio
+        end
       end
     end
 
