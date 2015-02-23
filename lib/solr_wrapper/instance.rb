@@ -33,14 +33,11 @@ module SolrWrapper
           sleep 1
         end
       end
-
-      started!
     end
 
     def stop
-      return unless started?
-      
-      if managed?
+      if managed? and started?
+
         exec('stop', p: port)
         # Wait for solr to stop
         while status
@@ -52,7 +49,7 @@ module SolrWrapper
     def status
       return true unless managed?
 
-      out = exec('status').read
+      out = exec('status', output: true).read
       out =~ /running on port #{port}/
     end
 
@@ -211,10 +208,6 @@ module SolrWrapper
     def solr_binary
       File.join(solr_dir, "bin", "solr")
     end
-    
-    def started! status = true
-      @started = status
-    end
 
     def verbose?
       !!options.fetch(:verbose, false)
@@ -239,6 +232,7 @@ module SolrWrapper
     end
     
     def exec cmd, options = {}
+      output = !!options.delete(:output)
       args = [solr_binary, cmd] + options.map { |k,v| ["-#{k}", "#{v}"] }.flatten
 
       if IO.respond_to? :popen4
@@ -246,7 +240,7 @@ module SolrWrapper
         pid, input, output, error = IO.popen4(args.join(" "))
         
         stringio = StringIO.new
-        if verbose?
+        if verbose? and !output
           IO.copy_stream(output,$stderr)
           IO.copy_stream(error,$stderr)
         else
@@ -256,9 +250,10 @@ module SolrWrapper
         input.close
         output.close
         error.close
+        
+        stringio.rewind
 
         if $? != 0
-          stringio.rewind
           raise "Failed to execute solr #{cmd}: #{stringio.read}"
         end
 
@@ -266,14 +261,16 @@ module SolrWrapper
       else
         IO.popen(args + [err: [:child, :out]]) do |io|
           stringio = StringIO.new
-          if verbose?
+          if verbose? and !output
             IO.copy_stream(io,$stderr)
           else
             IO.copy_stream(io, stringio)
           end
           _, exit_status = Process.wait2(io.pid)
+
+          stringio.rewind
+
           if exit_status != 0
-            stringio.rewind
             raise "Failed to execute solr #{cmd}: #{stringio.read}"
           end
 
