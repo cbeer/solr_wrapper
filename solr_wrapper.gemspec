@@ -9,7 +9,7 @@ Gem::Specification.new do |spec|
   spec.authors       = ["Chris Beer"]
   spec.email         = ["chris@cbeer.info"]
   spec.summary       = %q{Solr 5 service wrapper}
-  spec.homepage      = ""
+  spec.homepage      = "https://github.com/cbeer/solr_wrapper"
   spec.license       = "MIT"
 
   spec.files         = `git ls-files -z`.split("\x0")
