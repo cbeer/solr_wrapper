@@ -3,6 +3,7 @@ require 'fileutils'
 require 'open-uri'
 require 'ruby-progressbar'
 require 'securerandom'
+require 'stringio'
 require 'tmpdir'
 require 'zip'
 
@@ -24,10 +25,19 @@ module SolrWrapper
     def start
       extract
       IO.popen([solr_binary, "start", "-p", port, err: [:child, :out]]) do |io|
+        stringio = StringIO.new
         if verbose?
           IO.copy_stream(io,$stderr)
+        else
+          IO.copy_stream(io, stringio)
+        end
+        _, status = Process.wait2(io.pid)
+        if status != 0
+          stringio.rewind
+          raise "Unable to start solr: #{stringio.read}"
         end
       end if managed?
+
       started!
     end
 
@@ -35,8 +45,17 @@ module SolrWrapper
       return unless started?
 
       IO.popen([solr_binary, "stop", "-p", port, err: [:child, :out]]) do |io|
+        stringio = StringIO.new
         if verbose?
           IO.copy_stream(io,$stderr)
+        else
+          IO.copy_stream(io, stringio)
+        end
+        _, status = Process.wait2(io.pid)
+
+        if status != 0
+          stringio.rewind
+          raise "Unable to start solr: #{stringio.read}"
         end
       end if managed?
     end
