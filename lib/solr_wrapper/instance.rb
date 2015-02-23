@@ -1,5 +1,6 @@
 require 'digest'
 require 'fileutils'
+require 'json'
 require 'open-uri'
 require 'ruby-progressbar'
 require 'securerandom'
@@ -222,7 +223,12 @@ module SolrWrapper
     end
 
     def default_url
-      "http://mirrors.ibiblio.org/apache/lucene/solr/#{version}/solr-#{version}.zip"
+      @default_url ||= begin
+        mirror_url = "http://www.apache.org/dyn/closer.cgi/lucene/solr/#{version}/solr-#{version}.zip?asjson=true"
+        json = open(mirror_url).read
+        doc = JSON.parse(json)
+        doc['preferred'] + doc['path_info']
+      end
     end
 
     def version
