@@ -87,6 +87,8 @@ module SolrWrapper
     end
 
     def extract
+      return solr_dir if File.exists?(solr_binary) and extracted_version == version
+
       zip_path = download
 
       begin
@@ -106,6 +108,7 @@ module SolrWrapper
       begin  
         FileUtils.remove_dir(solr_dir,true)
         FileUtils.cp_r File.join(tmp_save_dir, File.basename(default_url, ".zip")), solr_dir
+        self.extracted_version = version
         FileUtils.chmod 0755, solr_binary
       rescue Exception => e
         abort "Unable to copy #{tmp_save_dir} to #{solr_dir}: #{e.message}"
@@ -248,6 +251,16 @@ module SolrWrapper
 
     def managed?
       !!options.fetch(:managed, true)
+    end
+
+    def extracted_version
+      File.read(File.join(solr_dir, "VERSION")).strip
+    end
+
+    def extracted_version= version
+      File.open(File.join(solr_dir, "VERSION"), "w") do |f|
+        f.puts version
+      end
     end
   end
 end
