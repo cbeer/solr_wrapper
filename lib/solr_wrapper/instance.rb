@@ -25,69 +25,34 @@ module SolrWrapper
 
     def start
       extract
-      IO.popen([solr_binary, "start", "-p", port, err: [:child, :out]]) do |io|
-        stringio = StringIO.new
-        if verbose?
-          IO.copy_stream(io,$stderr)
-        else
-          IO.copy_stream(io, stringio)
-        end
-        _, exit_status = Process.wait2(io.pid)
-        if exit_status != 0
-          stringio.rewind
-          raise "Unable to start solr: #{stringio.read}"
-        end
-      end if managed?
+      if managed?
+        exec('start', p: port)
 
-      # Wait for solr to start
-      unless status
-        sleep 1
+        # Wait for solr to start
+        unless status
+          sleep 1
+        end
       end
+
       started!
     end
 
     def stop
       return unless started?
-
-      IO.popen([solr_binary, "stop", "-p", port, err: [:child, :out]]) do |io|
-        stringio = StringIO.new
-        if verbose?
-          IO.copy_stream(io,$stderr)
-        else
-          IO.copy_stream(io, stringio)
-        end
-        _, exit_status = Process.wait2(io.pid)
-
-        if exit_status != 0
-          stringio.rewind
-          raise "Unable to start solr: #{stringio.read}"
-        end
-
+      
+      if managed?
+        exec('stop', p: port)
         # Wait for solr to stop
         while status
           sleep 1
         end
-      end if managed?
+      end
     end
 
     def status
       return true unless managed?
 
-      stringio = StringIO.new
-
-      IO.popen([solr_binary, "status", "-p", port, err: [:child, :out]]) do |io|
-        IO.copy_stream(io, stringio)
-
-        _, exit_status = Process.wait2(io.pid)
-
-        stringio.rewind
-
-        if exit_status != 0
-          raise "Unable to query solr status: #{stringio.read}"
-        end
-      end
-
-      out = stringio.read
+      out = exec('status').read
       out =~ /running on port #{port}/
     end
 
@@ -157,21 +122,13 @@ module SolrWrapper
     def create options = {}
       options[:name] ||= SecureRandom.hex
 
-      IO.popen([solr_binary, "create", "-c", options[:name], "-d", options[:dir], "-p", port, err: [:child, :out]]) do |io|
-        if verbose?
-          IO.copy_stream(io,$stderr)
-        end
-      end
+      exec("create", c: options[:name], d: options[:dir], p: port)
 
       options[:name]
     end
     
     def delete name, options = {}
-      IO.popen([solr_binary, "delete", "-c", name, "-p", port, err: [:child, :out]]) do |io|
-        if verbose?
-          IO.copy_stream(io,$stderr)
-        end
-      end
+      exec("delete", c: name, p: port)
     end
 
     def with_collection options = {}
@@ -280,5 +237,24 @@ module SolrWrapper
         f.puts version
       end
     end
+    
+    def exec cmd, options = {}
+      IO.popen([solr_binary, cmd] + options.map { |k,v| ["-#{k}", "#{v}"] }.flatten, "-p", port, + [err: [:child, :out]]) do |io|
+        stringio = StringIO.new
+        if verbose?
+          IO.copy_stream(io,$stderr)
+        else
+          IO.copy_stream(io, stringio)
+        end
+        _, exit_status = Process.wait2(io.pid)
+        if exit_status != 0
+          stringio.rewind
+          raise "Failed to execute solr #{cmd}: #{stringio.read}"
+        end
+
+        stringio
+      end
+    end
+
   end
 end
