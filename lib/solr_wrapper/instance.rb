@@ -60,8 +60,30 @@ module SolrWrapper
       end if managed?
     end
 
+    def status
+      return true unless managed?
+
+      stringio = StringIO.new
+
+      IO.popen([solr_binary, "status", "-p", port, err: [:child, :out]]) do |io|
+        IO.copy_stream(io, stringio)
+
+        _, status = Process.wait2(io.pid)
+
+        stringio.rewind
+
+        if status != 0
+          raise "Unable to query solr status: #{stringio.read}"
+        end
+      end
+
+      out = stringio.read
+
+      out =~ /running on port #{port}/
+    end
+
     def started?
-      !!@started
+      !!status
     end
 
     def extract
