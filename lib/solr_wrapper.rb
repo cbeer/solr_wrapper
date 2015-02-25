@@ -6,7 +6,7 @@ module SolrWrapper
     "5.0.0"
   end
 
-  def self.default_instance options
+  def self.default_instance options = {}
     @default_instance ||= SolrWrapper::Instance.new options
   end
 
