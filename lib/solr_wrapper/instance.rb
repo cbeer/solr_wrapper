@@ -165,7 +165,7 @@ module SolrWrapper
     def download
       unless File.exists? download_path and validate? download_path
         fetch_with_progressbar url, download_path
-        validate!
+        validate! download_path
       end
 
       download_path
@@ -176,7 +176,7 @@ module SolrWrapper
     end
 
     def validate! file
-      unless validate? download_path
+      unless validate? file
         raise "MD5 mismatch" unless options[:ignore_md5sum]
       end
     end
