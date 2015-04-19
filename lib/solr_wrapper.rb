@@ -6,13 +6,13 @@ module SolrWrapper
     "5.0.0"
   end
 
-  def self.default_instance options = {}
+  def self.default_instance(options = {})
     @default_instance ||= SolrWrapper::Instance.new options
   end
 
   ##
   # Ensures a Solr service is running before executing the block
-  def self.wrap options = {}, &block
+  def self.wrap(options = {}, &block)
     default_instance(options).wrap &block
   end
 end

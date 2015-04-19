@@ -27,11 +27,11 @@ module SolrWrapper
     # @option options [Boolean] :ignore_md5sum
     # @option options [Hash] :solr_options
     # @option options [Hash] :env
-    def initialize options = {}
+    def initialize(options = {})
       @options = options
     end
 
-    def wrap &block
+    def wrap(&_block)
       start
       yield self
     ensure
@@ -55,7 +55,7 @@ module SolrWrapper
     ##
     # Stop Solr and wait for it to finish exiting
     def stop
-      if managed? and started?
+      if managed? && started?
 
         exec('stop', p: port)
         # Wait for solr to stop
@@ -85,18 +85,18 @@ module SolrWrapper
     # @param [Hash] options
     # @option options [String] :name
     # @option options [String] :dir
-    def create options = {}
+    def create(options = {})
       options[:name] ||= SecureRandom.hex
 
       exec("create", c: options[:name], d: options[:dir], p: port)
 
       options[:name]
     end
-    
+
     ##
     # Create a new collection in solr
     # @param [String] name collection name
-    def delete name, options = {}
+    def delete(name, _options = {})
       exec("delete", c: name, p: port)
     end
 
@@ -105,7 +105,7 @@ module SolrWrapper
     # @param [Hash] options
     # @option options [String] :name
     # @option options [String] :dir
-    def with_collection options = {}
+    def with_collection(options = {})
       name = create(options)
       begin
         yield name
@@ -115,7 +115,7 @@ module SolrWrapper
     end
 
     ##
-    # Get the port this Solr instance is running at 
+    # Get the port this Solr instance is running at
     def port
       options.fetch(:port, "8983").to_s
     end
@@ -138,8 +138,10 @@ module SolrWrapper
     end
 
     protected
+
+    # rubocop:disable Lint/RescueException
     def extract
-      return solr_dir if File.exists?(solr_binary) and extracted_version == version
+      return solr_dir if File.exists?(solr_binary) && extracted_version == version
 
       zip_path = download
 
@@ -147,8 +149,8 @@ module SolrWrapper
         Zip::File.open(zip_path) do |zip_file|
           # Handle entries one by one
           zip_file.each do |entry|
-            dest_file = File.join(tmp_save_dir,entry.name)
-            FileUtils.remove_entry(dest_file,true)
+            dest_file = File.join(tmp_save_dir, entry.name)
+            FileUtils.remove_entry(dest_file, true)
             entry.extract(dest_file)
           end
         end
@@ -157,8 +159,8 @@ module SolrWrapper
         abort "Unable to unzip #{zip_path} into #{tmp_save_dir}: #{e.message}"
       end
 
-      begin  
-        FileUtils.remove_dir(solr_dir,true)
+      begin
+        FileUtils.remove_dir(solr_dir, true)
         FileUtils.cp_r File.join(tmp_save_dir, File.basename(download_url, ".zip")), solr_dir
         self.extracted_version = version
         FileUtils.chmod 0755, solr_binary
@@ -172,9 +174,10 @@ module SolrWrapper
     ensure
       FileUtils.remove_entry tmp_save_dir if File.exists? tmp_save_dir
     end
+    # rubocop:enable Lint/RescueException
 
     def download
-      unless File.exists? download_path and validate? download_path
+      unless File.exists?(download_path) && validate?(download_path)
         fetch_with_progressbar download_url, download_path
         validate! download_path
       end
@@ -182,11 +185,11 @@ module SolrWrapper
       download_path
     end
 
-    def validate? file
+    def validate?(file)
       Digest::MD5.file(file).hexdigest == expected_md5sum
     end
 
-    def validate! file
+    def validate!(file)
       unless validate? file
         raise "MD5 mismatch" unless options[:ignore_md5sum]
       end
@@ -195,19 +198,19 @@ module SolrWrapper
     ##
     # Run a bin/solr command
     # @see https://github.com/apache/lucene-solr/blob/trunk/solr/bin/solr
-    def exec cmd, options = {}
+    def exec(cmd, options = {})
       output = !!options.delete(:output)
-      args = [solr_binary, cmd] + solr_options.merge(options).map { |k,v| ["-#{k}", "#{v}"] }.flatten
+      args = [solr_binary, cmd] + solr_options.merge(options).map { |k, v| ["-#{k}", "#{v}"] }.flatten
 
       if IO.respond_to? :popen4
         # JRuby
-        env_str = env.map { |k,v| "#{Shellwords.escape(k)}=#{Shellwords.escape(v)}" }.join(" ")
-        pid, input, output, error = IO.popen4(env_str + " " + args.join(" "))
-        
+        env_str = env.map { |k, v| "#{Shellwords.escape(k)}=#{Shellwords.escape(v)}" }.join(" ")
+        _, input, output, error = IO.popen4(env_str + " " + args.join(" "))
+
         stringio = StringIO.new
-        if verbose? and !output
-          IO.copy_stream(output,$stderr)
-          IO.copy_stream(error,$stderr)
+        if verbose? && !output
+          IO.copy_stream(output, $stderr)
+          IO.copy_stream(error, $stderr)
         else
           IO.copy_stream(output, stringio)
           IO.copy_stream(error, stringio)
@@ -215,7 +218,7 @@ module SolrWrapper
         input.close
         output.close
         error.close
-        
+
         stringio.rewind
 
         if $? != 0
@@ -226,8 +229,8 @@ module SolrWrapper
       else
         IO.popen(env, args + [err: [:child, :out]]) do |io|
           stringio = StringIO.new
-          if verbose? and !output
-            IO.copy_stream(io,$stderr)
+          if verbose? && !output
+            IO.copy_stream(io, $stderr)
           else
             IO.copy_stream(io, stringio)
           end
@@ -244,7 +247,8 @@ module SolrWrapper
       end
     end
 
-    private  
+    private
+
     def download_url
       @download_url ||= options.fetch(:url, default_download_url)
     end
@@ -279,7 +283,7 @@ module SolrWrapper
     end
 
     def download_path
-      @download_path ||= options.fetch(:download_path, default_download_path)  
+      @download_path ||= options.fetch(:download_path, default_download_path)
     end
 
     def default_download_path
@@ -305,7 +309,7 @@ module SolrWrapper
     def expected_md5sum
       @md5sum ||= options.fetch(:md5sum, open(md5file).read.split(" ").first)
     end
-    
+
     def solr_binary
       File.join(solr_dir, "bin", "solr")
     end
@@ -318,17 +322,17 @@ module SolrWrapper
       @tmp_save_dir ||= Dir.mktmpdir
     end
 
-    def fetch_with_progressbar url, output
+    def fetch_with_progressbar(url, output)
       pbar = ProgressBar.create(title: File.basename(url), total: nil, format: "%t: |%B| %p%% (%e )")
-      open(url, content_length_proc: lambda {|t|
+      open(url, content_length_proc: lambda do|t|
         if t && 0 < t
           pbar.total = t
         end
-        },
-        progress_proc: lambda {|s|
-          pbar.progress = s
-        }) do |io|
-        IO.copy_stream(io,output)
+      end,
+                progress_proc: lambda do|s|
+                  pbar.progress = s
+                end) do |io|
+        IO.copy_stream(io, output)
       end
     end
 
@@ -344,7 +348,7 @@ module SolrWrapper
       File.read(version_file).strip if File.exists? version_file
     end
 
-    def extracted_version= version
+    def extracted_version=(version)
       File.open(version_file, "w") do |f|
         f.puts version
       end
