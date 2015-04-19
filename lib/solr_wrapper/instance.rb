@@ -130,6 +130,12 @@ module SolrWrapper
       FileUtils.remove_entry(version_file) if File.exists? version_file
     end
 
+    ##
+    # Get a (likely) URL to the solr instance
+    def url
+      "http://127.0.0.1:#{port}/solr/"
+    end
+
     protected
     def extract
       return solr_dir if File.exists?(solr_binary) and extracted_version == version
