@@ -21,6 +21,7 @@ module SolrWrapper
     # @option options [String] :instance_dir
     # @option options [String] :download_path
     # @option options [String] :md5sum
+    # @option options [String] :solr_xml
     # @option options [Boolean] :verbose
     # @option options [Boolean] :managed
     # @option options [Boolean] :ignore_md5sum
@@ -157,6 +158,8 @@ module SolrWrapper
       rescue Exception => e
         abort "Unable to copy #{tmp_save_dir} to #{solr_dir}: #{e.message}"
       end
+
+      configure
 
       solr_dir
     ensure
@@ -333,6 +336,10 @@ module SolrWrapper
       File.open(version_file, "w") do |f|
         f.puts version
       end
+    end
+
+    def configure
+      FileUtils.cp options[:solr_xml], File.join(solr_dir, "server", "solr", "solr.xml") if options[:solr_xml]
     end
   end
 end
