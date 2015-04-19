@@ -152,7 +152,7 @@ module SolrWrapper
 
       begin  
         FileUtils.remove_dir(solr_dir,true)
-        FileUtils.cp_r File.join(tmp_save_dir, File.basename(default_url, ".zip")), solr_dir
+        FileUtils.cp_r File.join(tmp_save_dir, File.basename(download_url, ".zip")), solr_dir
         self.extracted_version = version
         FileUtils.chmod 0755, solr_binary
       rescue Exception => e
@@ -168,7 +168,7 @@ module SolrWrapper
 
     def download
       unless File.exists? download_path and validate? download_path
-        fetch_with_progressbar url, download_path
+        fetch_with_progressbar download_url, download_path
         validate! download_path
       end
 
@@ -237,11 +237,11 @@ module SolrWrapper
     end
 
     private  
-    def url
-      @download_url ||= options.fetch(:url, default_url)
+    def download_url
+      @download_url ||= options.fetch(:url, default_download_url)
     end
 
-    def default_url
+    def default_download_url
       @default_url ||= begin
         mirror_url = "http://www.apache.org/dyn/closer.cgi/lucene/solr/#{version}/solr-#{version}.zip?asjson=true"
         json = open(mirror_url).read
@@ -271,11 +271,11 @@ module SolrWrapper
     end
 
     def default_download_path
-      File.join(Dir.tmpdir, File.basename(default_url))
+      File.join(Dir.tmpdir, File.basename(download_url))
     end
 
     def solr_dir
-      @solr_dir ||= options.fetch(:instance_dir, File.join(Dir.tmpdir, File.basename(default_url, ".zip")))
+      @solr_dir ||= options.fetch(:instance_dir, File.join(Dir.tmpdir, File.basename(download_url, ".zip")))
     end
 
     def verbose?
