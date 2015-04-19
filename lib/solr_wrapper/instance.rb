@@ -24,6 +24,7 @@ module SolrWrapper
     # @option options [Boolean] :verbose
     # @option options [Boolean] :managed
     # @option options [Boolean] :ignore_md5sum
+    # @option options [Hash] :solr_options
     def initialize options = {}
       @options = options
     end
@@ -186,7 +187,7 @@ module SolrWrapper
     # @see https://github.com/apache/lucene-solr/blob/trunk/solr/bin/solr
     def exec cmd, options = {}
       output = !!options.delete(:output)
-      args = [solr_binary, cmd] + options.map { |k,v| ["-#{k}", "#{v}"] }.flatten
+      args = [solr_binary, cmd] + solr_options.merge(options).map { |k,v| ["-#{k}", "#{v}"] }.flatten
 
       if IO.respond_to? :popen4
         # JRuby
@@ -252,6 +253,10 @@ module SolrWrapper
 
     def version
       @version ||= options.fetch(:version, default_solr_version)
+    end
+
+    def solr_options
+      options.fetch(:solr_options, {})
     end
 
     def default_solr_version
