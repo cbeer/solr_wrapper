@@ -26,6 +26,7 @@ module SolrWrapper
     # @option options [Boolean] :managed
     # @option options [Boolean] :ignore_md5sum
     # @option options [Hash] :solr_options
+    # @option options [Hash] :env
     def initialize options = {}
       @options = options
     end
@@ -200,7 +201,8 @@ module SolrWrapper
 
       if IO.respond_to? :popen4
         # JRuby
-        pid, input, output, error = IO.popen4(args.join(" "))
+        env_str = env.map { |k,v| "#{Shellwords.escape(k)}=#{Shellwords.escape(v)}" }.join(" ")
+        pid, input, output, error = IO.popen4(env_str + " " + args.join(" "))
         
         stringio = StringIO.new
         if verbose? and !output
@@ -222,7 +224,7 @@ module SolrWrapper
 
         stringio
       else
-        IO.popen(args + [err: [:child, :out]]) do |io|
+        IO.popen(env, args + [err: [:child, :out]]) do |io|
           stringio = StringIO.new
           if verbose? and !output
             IO.copy_stream(io,$stderr)
@@ -266,6 +268,10 @@ module SolrWrapper
 
     def solr_options
       options.fetch(:solr_options, {})
+    end
+
+    def env
+      options.fetch(:env, {})
     end
 
     def default_solr_version
