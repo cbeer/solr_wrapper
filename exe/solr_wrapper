@@ -1,0 +1,30 @@
+#!/usr/bin/env ruby
+
+require 'solr_wrapper'
+require 'optparse'
+
+options = {}
+OptionParser.new do |opts|
+  opts.banner = "Usage: solr_wrapper [options]"
+
+  opts.on("-v", "--[no-]verbose", "Run verbosely") do |v|
+    options[:verbose] = v
+  end
+
+  opts.on("--version VERSION", "Specify a Solr version to download (default: #{SolrWrapper.default_solr_version})") do |v|
+    options[:version] = v
+  end
+
+  opts.on("-pPORT", "--port PORT", "Specify the port Solr should run at (default: 8983)") do |p|
+    options[:port] = p
+  end
+end.parse!
+
+# default to verbose
+options[:verbose] = true if options[:verbose].nil?
+
+SolrWrapper.wrap(options) do |conn|
+  while conn.status
+    sleep 1
+  end
+end

@@ -10,7 +10,7 @@ require 'zip'
 
 module SolrWrapper
   class Instance
-    attr_reader :options
+    attr_reader :options, :pid
 
     ##
     # @param [Hash] options
@@ -63,6 +63,8 @@ module SolrWrapper
           sleep 1
         end
       end
+
+      @pid = nil
     end
 
     ##
@@ -205,8 +207,8 @@ module SolrWrapper
       if IO.respond_to? :popen4
         # JRuby
         env_str = env.map { |k, v| "#{Shellwords.escape(k)}=#{Shellwords.escape(v)}" }.join(" ")
-        _, input, output, error = IO.popen4(env_str + " " + args.join(" "))
-
+        pid, input, output, error = IO.popen4(env_str + " " + args.join(" "))
+        @pid = pid
         stringio = StringIO.new
         if verbose? && !output
           IO.copy_stream(output, $stderr)
@@ -234,8 +236,9 @@ module SolrWrapper
           else
             IO.copy_stream(io, stringio)
           end
-          _, exit_status = Process.wait2(io.pid)
+          @pid = io.pid
 
+          _, exit_status = Process.wait2(io.pid)
           stringio.rewind
 
           if exit_status != 0
