@@ -3,7 +3,7 @@ require 'solr_wrapper/instance'
 
 module SolrWrapper
   def self.default_solr_version
-    "5.2.1"
+    '5.3.0'
   end
 
   def self.default_instance(options = {})
