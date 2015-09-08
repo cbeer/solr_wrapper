@@ -258,7 +258,7 @@ module SolrWrapper
 
     def default_download_url
       @default_url ||= begin
-        mirror_url = "http://www.apache.org/dyn/closer.cgi/lucene/solr/#{version}/solr-#{version}.zip?asjson=true"
+        mirror_url = "http://www.apache.org/dyn/closer.lua/lucene/solr/#{version}/solr-#{version}.zip?asjson=true"
         json = open(mirror_url).read
         doc = JSON.parse(json)
         doc['preferred'] + doc['path_info']
