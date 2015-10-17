@@ -26,3 +26,9 @@ SolrWrapper.wrap port: 8983, verbose: true, managed: true
 ```ruby
 solr.with_collection(name: 'collection_name', dir: 'path_to_solr_confiigs')
 ```
+
+## From the command line
+
+```console
+$ solr_wrapper -p 8983
+```

@@ -4,6 +4,7 @@ require 'solr_wrapper'
 require 'optparse'
 
 options = {}
+collection_options = {}
 OptionParser.new do |opts|
   opts.banner = "Usage: solr_wrapper [options]"
 
@@ -18,13 +19,23 @@ OptionParser.new do |opts|
   opts.on("-pPORT", "--port PORT", "Specify the port Solr should run at (default: 8983)") do |p|
     options[:port] = p
   end
+
+  opts.on("-cNAME", "--collection_name NAME", "Create a default solr collection with the given name") do |c|
+    collection_options[:name] = c
+  end
+
+  opts.on("-dDIR", "--directory DIR", "Create a default solr collection with the files from the given directory") do |d|
+    collection_options[:dir] = d
+  end
 end.parse!
 
 # default to verbose
 options[:verbose] = true if options[:verbose].nil?
 
 SolrWrapper.wrap(options) do |conn|
-  while conn.status
-    sleep 1
+  conn.with_collection(collection_options) do
+    while conn.status
+      sleep 1
+    end
   end
 end

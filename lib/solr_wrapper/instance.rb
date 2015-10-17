@@ -90,7 +90,10 @@ module SolrWrapper
     def create(options = {})
       options[:name] ||= SecureRandom.hex
 
-      exec("create", c: options[:name], d: options[:dir], p: port)
+      create_options = { p: port }
+      create_options[:c] = options[:name] if options[:name]
+      create_options[:d] = options[:dir] if options[:dir]
+      exec("create", create_options)
 
       options[:name]
     end
@@ -108,6 +111,8 @@ module SolrWrapper
     # @option options [String] :name
     # @option options [String] :dir
     def with_collection(options = {})
+      return yield if options.empty?
+
       name = create(options)
       begin
         yield name
