@@ -31,7 +31,7 @@ Options:
 |Option         |                                         |
 |---------------|-----------------------------------------|
 | instance_dir  | Directory to store the solr index files |
-| url           | ??? |
+| url           | URL of the Zip file to download |
 | version       | Solr version to download and install |
 | port          | port to run Solr on |
 | version_file  | Local path to store the currently installed version |
