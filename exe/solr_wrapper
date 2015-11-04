@@ -20,13 +20,22 @@ OptionParser.new do |opts|
     options[:port] = p
   end
 
+  opts.on("-iDIR", "--instance_directory DIR", "Install/use solr at the given directory") do |d|
+    options[:instance_dir] = d
+  end
+
+  opts.on("-lDIR", "--lib_directory DIR", "Grab extra libs from this directory") do |d|
+    options[:extra_lib_dir] = d
+  end
+
   opts.on("-cNAME", "--collection_name NAME", "Create a default solr collection with the given name") do |c|
     collection_options[:name] = c
   end
 
-  opts.on("-dDIR", "--directory DIR", "Create a default solr collection with the files from the given directory") do |d|
+  opts.on("-dDIR", "--collection_config DIR", "Create a default solr collection with the files from the given directory") do |d|
     collection_options[:dir] = d
   end
+
 end.parse!
 
 # default to verbose
