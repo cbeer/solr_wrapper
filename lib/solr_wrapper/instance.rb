@@ -15,13 +15,14 @@ module SolrWrapper
     ##
     # @param [Hash] options
     # @option options [String] :url
-    # @option options [String] :version
-    # @option options [String] :port
-    # @option options [String] :version_file
-    # @option options [String] :instance_dir
-    # @option options [String] :download_path
-    # @option options [String] :md5sum
-    # @option options [String] :solr_xml
+    # @option options [String] :instance_dir Directory to store the solr index files
+    # @option options [String] :version Solr version to download and install
+    # @option options [String] :port port to run Solr on
+    # @option options [String] :version_file Local path to store the currently installed version
+    # @option options [String] :download_path Local path for storing the downloaded Solr zip file
+    # @option options [String] :md5sum Path/URL to MD5 checksum
+    # @option options [String] :solr_xml Path to Solr configuration
+    # @option options [String] :extra_lib_dir Path to directory containing extra libraries to copy into solr_dir/lib
     # @option options [Boolean] :verbose
     # @option options [Boolean] :managed
     # @option options [Boolean] :ignore_md5sum
@@ -148,7 +149,10 @@ module SolrWrapper
 
     # rubocop:disable Lint/RescueException
     def extract
-      return solr_dir if File.exists?(solr_binary) && extracted_version == version
+      if File.exists?(solr_binary) && extracted_version == version
+        configure
+        return solr_dir
+      end
 
       zip_path = download
 
@@ -363,7 +367,8 @@ module SolrWrapper
     end
 
     def configure
-      FileUtils.cp options[:solr_xml], File.join(solr_dir, "server", "solr", "solr.xml") if options[:solr_xml]
+      FileUtils.cp options[:solr_xml], File.join(solr_dir, 'server', 'solr', 'solr.xml') if options[:solr_xml]
+      FileUtils.cp_r File.join(options[:extra_lib_dir], '.'), File.join(solr_dir, 'server', 'solr', 'lib') if options[:extra_lib_dir]
     end
   end
 end
