@@ -20,12 +20,13 @@ module SolrWrapper
     # @option options [String] :port port to run Solr on
     # @option options [Boolean] :cloud Run solr in cloud mode
     # @option options [String] :version_file Local path to store the currently installed version
+    # @option options [String] :download_dir Local directory to store the downloaded Solr zip and its md5 file in (overridden by :download_path)
     # @option options [String] :download_path Local path for storing the downloaded Solr zip file
+    # @option options [Boolean] :validate Should solr_wrapper download a new md5 and (re-)validate the zip file? (default: trueF)
     # @option options [String] :md5sum Path/URL to MD5 checksum
     # @option options [String] :solr_xml Path to Solr configuration
     # @option options [String] :extra_lib_dir Path to directory containing extra libraries to copy into solr_dir/lib
     # @option options [Boolean] :verbose return verbose info when running solr commands
-    # @option options [Boolean] :managed
     # @option options [Boolean] :ignore_md5sum
     # @option options [Hash] :solr_options
     # @option options [Hash] :env
@@ -46,8 +47,7 @@ module SolrWrapper
     def start
       extract_and_configure
       if managed?
-        boolean_flags =  options[:cloud] ? ['-c'] : []
-        exec('start', {p: port}, boolean_flags)
+        exec('start', p: port, c: options[:cloud])
 
         # Wait for solr to start
         unless status
@@ -75,8 +75,7 @@ module SolrWrapper
     # Stop Solr and wait for it to finish exiting
     def restart
       if managed? && started?
-        boolean_flags =  options[:cloud] ? ['-c'] : []
-        exec('restart', {p: port}, boolean_flags)
+        exec('restart', p: port, c: options[:cloud])
       end
     end
 
@@ -85,7 +84,7 @@ module SolrWrapper
     def status
       return true unless managed?
 
-      out = exec('status', output: true).read
+      out = exec('status').read
       out =~ /running on port #{port}/
     end
 
@@ -142,9 +141,10 @@ module SolrWrapper
 
     ##
     # Clean up any files solr_wrapper may have downloaded
-    def clean!
+    # @option [Boolean] keep_zip don't delete the downloaded (zipped) copy of solr
+    def clean!(keep_zip: false)
       stop
-      FileUtils.remove_entry(download_path) if File.exists? download_path
+      FileUtils.remove_entry(download_path) if File.exists?(download_path) && !keep_zip
       FileUtils.remove_entry(tmp_save_dir, true) if File.exists? tmp_save_dir
       FileUtils.remove_entry(solr_dir, true) if File.exists? solr_dir
       FileUtils.remove_entry(md5sum_path) if File.exists? md5sum_path
@@ -223,11 +223,12 @@ module SolrWrapper
         fetch_with_progressbar download_url, download_path
         validate! download_path
       end
-
       download_path
     end
 
     def validate?(file)
+      return true if options[:validate] == false
+
       Digest::MD5.file(file).hexdigest == expected_md5sum
     end
 
@@ -241,58 +242,66 @@ module SolrWrapper
     # Run a bin/solr command
     # @param [String] cmd command to run
     # @param [Hash] options key-value pairs to transform into command line arguments
-    # @param [Array] boolean_flags to include in command (ie. "-c")
     # @return [StringIO] an IO object for the executed shell command
     # @see https://github.com/apache/lucene-solr/blob/trunk/solr/bin/solr
+    # If you want to pass a boolean flag, include it in the +options+ hash with its value set to +true+
+    # the key will be converted into a boolean flag for you.
     # @example start solr in cloud mode on port 8983
-    #   exec('start', {p: '8983'}, ["-c"])
-    def exec(cmd, options = {}, boolean_flags = [])
-      output = !!options.delete(:output)
-      args = [solr_binary, cmd] + boolean_flags + solr_options.merge(options).map { |k, v| ["-#{k}", "#{v}"] }.flatten
+    #   exec('start', {p: '8983', c: true})
+    def exec(cmd, options = {})
+      silence_output = !options.delete(:output)
+
+      args = [solr_binary, cmd] + solr_options.merge(options).map do |k, v|
+        case v
+        when true
+          "-#{k}"
+        when false, nil
+          # don't return anything
+        else
+          ["-#{k}", "#{v}"]
+        end
+      end.flatten.compact
+
       if IO.respond_to? :popen4
         # JRuby
         env_str = env.map { |k, v| "#{Shellwords.escape(k)}=#{Shellwords.escape(v)}" }.join(" ")
         pid, input, output, error = IO.popen4(env_str + " " + args.join(" "))
         @pid = pid
         stringio = StringIO.new
-        if verbose? && !output
+        if verbose? && !silence_output
           IO.copy_stream(output, $stderr)
           IO.copy_stream(error, $stderr)
         else
           IO.copy_stream(output, stringio)
           IO.copy_stream(error, stringio)
         end
+
         input.close
         output.close
         error.close
-
-        stringio.rewind
-
-        if $? != 0
-          raise "Failed to execute solr #{cmd}: #{stringio.read}"
-        end
-
-        stringio
+        exit_status = Process.waitpid2(@pid).last
       else
         IO.popen(env, args + [err: [:child, :out]]) do |io|
           stringio = StringIO.new
-          if verbose? && !output
+
+          if verbose? && !silence_output
             IO.copy_stream(io, $stderr)
           else
             IO.copy_stream(io, stringio)
           end
+
           @pid = io.pid
 
           _, exit_status = Process.wait2(io.pid)
-          stringio.rewind
-
-          if exit_status != 0
-            raise "Failed to execute solr #{cmd}: #{stringio.read}"
-          end
-
-          stringio
         end
       end
+
+      stringio.rewind
+      if exit_status != 0
+        raise "Failed to execute solr #{cmd}: #{stringio.read}"
+      end
+
+      stringio
     end
 
     private
@@ -335,7 +344,13 @@ module SolrWrapper
     end
 
     def default_download_path
-      File.join(Dir.tmpdir, File.basename(download_url))
+      File.join(download_dir, File.basename(download_url))
+    end
+
+    def download_dir
+      @download_dir ||= options.fetch(:download_dir, Dir.tmpdir)
+      FileUtils.mkdir_p @download_dir
+      @download_dir
     end
 
     def verbose?
@@ -343,7 +358,7 @@ module SolrWrapper
     end
 
     def managed?
-      !!options.fetch(:managed, true)
+      File.exists?(solr_dir)
     end
 
     def version_file
@@ -359,7 +374,7 @@ module SolrWrapper
     end
 
     def md5sum_path
-      File.join(Dir.tmpdir, File.basename(md5url))
+      File.join(download_dir, File.basename(md5url))
     end
 
     def tmp_save_dir

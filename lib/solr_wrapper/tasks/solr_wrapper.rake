@@ -10,16 +10,19 @@ namespace :solr do
           cloud: true,
           port: '8983',
           version: '5.3.1',
-          instance_dir: 'solr'
+          instance_dir: 'solr',
+          validate_existing: false
       }
     end
+    SOLR_OPTIONS[:validate_existing] ||= false
+    SOLR_OPTIONS[:download_dir] ||= Rails.root.to_s + '/tmp' if defined? Rails
     @solr_instance = SolrWrapper.default_instance(SOLR_OPTIONS)
   end
 
   desc 'Install a clean version of solr. Replaces the existing copy if there is one.'
   task :clean => :environment do
     puts "Installing clean version of solr at #{File.expand_path(@solr_instance.solr_dir)}"
-    @solr_instance.clean!
+    @solr_instance.clean!(keep_zip: true)
     @solr_instance.extract_and_configure
   end
 
