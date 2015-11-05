@@ -20,12 +20,13 @@ module SolrWrapper
     # @option options [String] :port port to run Solr on
     # @option options [Boolean] :cloud Run solr in cloud mode
     # @option options [String] :version_file Local path to store the currently installed version
+    # @option options [String] :download_dir Local directory to store the downloaded Solr zip and its md5 file in (overridden by :download_path)
     # @option options [String] :download_path Local path for storing the downloaded Solr zip file
+    # @option options [Boolean] :validate_existing If the zip file already exists at download_path, should solr_wrapper download a new md5 and (re-)validate the zip file?
     # @option options [String] :md5sum Path/URL to MD5 checksum
     # @option options [String] :solr_xml Path to Solr configuration
     # @option options [String] :extra_lib_dir Path to directory containing extra libraries to copy into solr_dir/lib
     # @option options [Boolean] :verbose return verbose info when running solr commands
-    # @option options [Boolean] :managed
     # @option options [Boolean] :ignore_md5sum
     # @option options [Hash] :solr_options
     # @option options [Hash] :env
@@ -142,9 +143,10 @@ module SolrWrapper
 
     ##
     # Clean up any files solr_wrapper may have downloaded
-    def clean!
+    # @option [Boolean] keep_zip don't delete the downloaded (zipped) copy of solr
+    def clean!(keep_zip: false)
       stop
-      FileUtils.remove_entry(download_path) if File.exists? download_path
+      FileUtils.remove_entry(download_path) if File.exists?(download_path) && !keep_zip
       FileUtils.remove_entry(tmp_save_dir, true) if File.exists? tmp_save_dir
       FileUtils.remove_entry(solr_dir, true) if File.exists? solr_dir
       FileUtils.remove_entry(md5sum_path) if File.exists? md5sum_path
@@ -219,11 +221,10 @@ module SolrWrapper
     end
 
     def download
-      unless File.exists?(download_path) && validate?(download_path)
+      unless File.exists?(download_path) && (!options[:validate_existing] || validate?(download_path))
         fetch_with_progressbar download_url, download_path
         validate! download_path
       end
-
       download_path
     end
 
@@ -326,7 +327,15 @@ module SolrWrapper
     end
 
     def default_download_path
-      File.join(Dir.tmpdir, File.basename(download_url))
+      File.join(download_dir, File.basename(download_url))
+    end
+
+    def download_dir
+      if @download_dir.nil?
+        @download_dir = options.fetch(:download_dir, Dir.tmpdir)
+        FileUtils.mkdir_p @download_dir
+      end
+      @download_dir
     end
 
     def verbose?
@@ -334,7 +343,7 @@ module SolrWrapper
     end
 
     def managed?
-      !!options.fetch(:managed, true)
+      File.exists?(solr_dir)
     end
 
     def version_file
@@ -350,7 +359,7 @@ module SolrWrapper
     end
 
     def md5sum_path
-      File.join(Dir.tmpdir, File.basename(md5url))
+      File.join(download_dir, File.basename(md5url))
     end
 
     def tmp_save_dir
