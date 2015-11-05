@@ -85,7 +85,7 @@ module SolrWrapper
     def status
       return true unless managed?
 
-      out = exec('status', output: true).read
+      out = exec('status').read
       out =~ /running on port #{port}/
     end
 
@@ -247,7 +247,7 @@ module SolrWrapper
     # @example start solr in cloud mode on port 8983
     #   exec('start', {p: '8983'}, ["-c"])
     def exec(cmd, options = {}, boolean_flags = [])
-      output = !!options.delete(:output)
+      boolean_flags ||= []
       args = [solr_binary, cmd] + boolean_flags + solr_options.merge(options).map { |k, v| ["-#{k}", "#{v}"] }.flatten
       if IO.respond_to? :popen4
         # JRuby
@@ -255,44 +255,35 @@ module SolrWrapper
         pid, input, output, error = IO.popen4(env_str + " " + args.join(" "))
         @pid = pid
         stringio = StringIO.new
-        if verbose? && !output
+        IO.copy_stream(output, stringio)
+        IO.copy_stream(error, stringio)
+        if verbose?
           IO.copy_stream(output, $stderr)
           IO.copy_stream(error, $stderr)
-        else
-          IO.copy_stream(output, stringio)
-          IO.copy_stream(error, stringio)
         end
         input.close
         output.close
         error.close
-
-        stringio.rewind
-
-        if $? != 0
-          raise "Failed to execute solr #{cmd}: #{stringio.read}"
-        end
-
-        stringio
+        exit_status = Process.waitpid2(@pid).last
       else
         IO.popen(env, args + [err: [:child, :out]]) do |io|
           stringio = StringIO.new
-          if verbose? && !output
-            IO.copy_stream(io, $stderr)
-          else
-            IO.copy_stream(io, stringio)
-          end
+
+          IO.copy_stream(io, stringio)
+          IO.copy_stream(io, $stderr) if verbose?
           @pid = io.pid
 
           _, exit_status = Process.wait2(io.pid)
-          stringio.rewind
-
-          if exit_status != 0
-            raise "Failed to execute solr #{cmd}: #{stringio.read}"
-          end
-
-          stringio
         end
       end
+
+      stringio.rewind
+
+      if exit_status != 0
+        raise "Failed to execute solr #{cmd}: #{stringio.read}"
+      end
+
+      stringio
     end
 
     private

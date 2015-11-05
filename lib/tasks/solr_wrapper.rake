@@ -27,9 +27,15 @@ namespace :solr do
     begin
       puts "Starting solr at #{File.expand_path(@solr_instance.solr_dir)} with options #{@solr_instance.options}"
       @solr_instance.start
-    rescue
-      puts '... something went wrong. Stopping solr.'
-      @solr_instance.stop
+    rescue => e
+      if e.message.include?("Port #{@solr_instance.port} is already being used by another process")
+        puts "FAILED. Port #{@solr_instance.port} is already being used."
+        puts " Did you already have solr running?"
+        puts "  a) YES: Continue as you were. Solr is running."
+        puts "  b) NO: Either set SOLR_OPTIONS[:port] to a different value or stop the process that's using port #{@solr_instance.port}."
+      else
+        raise RuntimeError, "Failed to start solr. #{e.class}: #{e.message}"
+      end
     end
   end
 
