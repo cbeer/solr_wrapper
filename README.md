@@ -11,10 +11,10 @@ end
 Or with Solr and a solr collection:
 
 ```ruby
-  subject.wrap do |solr|
-    solr.with_collection(dir: File.join(FIXTURES_DIR, "basic_configs")) do |collection_name|
-    end
+SolrWrapper.wrap do |solr|
+  solr.with_collection(dir: File.join(FIXTURES_DIR, "basic_configs")) do |collection_name|
   end
+end
 ```
 
 ## Basic Options
@@ -24,7 +24,7 @@ SolrWrapper.wrap port: 8983, verbose: true, managed: true
 ```
 
 ```ruby
-solr.with_collection(name: 'collection_name', dir: 'path_to_solr_confiigs')
+solr.with_collection(name: 'collection_name', dir: 'path_to_solr_configs')
 ```
 
 ## From the command line
