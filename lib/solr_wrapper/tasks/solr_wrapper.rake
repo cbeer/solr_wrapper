@@ -1,3 +1,5 @@
+require 'solr_wrapper'
+
 ## These tasks get loaded into the host context when solr_wrapper is required
 namespace :solr do
 

@@ -1,9 +1,6 @@
 require 'solr_wrapper/version'
 require 'solr_wrapper/instance'
 
-# load rake tasks into host environment if Rake is defined
-Dir[File.expand_path(File.join(File.dirname(__FILE__),"tasks/*.rake"))].each { |ext| load ext } if defined?(Rake)
-
 module SolrWrapper
   def self.default_solr_version
     '5.3.1'
