@@ -45,7 +45,7 @@ module SolrWrapper
     ##
     # Start Solr and wait for it to become available
     def start
-      raise_error_unless_extracted
+      extract_and_configure
       if managed?
         boolean_flags =  options[:cloud] ? ['-c'] : []
         exec('start', {p: port}, boolean_flags)
