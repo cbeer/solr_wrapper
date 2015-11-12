@@ -6,8 +6,12 @@ module SolrWrapper
     '5.3.1'
   end
 
+  def self.default_instance_options
+    @default_instance_options ||= {}
+  end
+
   def self.default_instance(options = {})
-    @default_instance ||= SolrWrapper::Instance.new options
+    @default_instance ||= SolrWrapper::Instance.new default_instance_options.merge(options)
   end
 
   ##
