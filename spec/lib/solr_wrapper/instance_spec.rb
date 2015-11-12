@@ -19,9 +19,8 @@ describe SolrWrapper::Instance do
   end
   describe 'exec' do
     let(:cmd) { 'start' }
-    let(:options) { {p: '4098'} }
-    let(:boolean_flags) { ['-help'] }
-    subject { solr_instance.send(:exec, cmd, options, boolean_flags) }
+    let(:options) { {p: '4098', help: true} }
+    subject { solr_instance.send(:exec, cmd, options) }
     describe 'without open4 installed' do
       before do
         allow(IO).to receive(:respond_to?).with(:popen4).and_return false
@@ -31,14 +30,13 @@ describe SolrWrapper::Instance do
         expect(result_io.read).to include('Usage: solr start')
       end
       it 'accepts boolean flags' do
-        result_io = solr_instance.send(:exec, 'start', {p: '4098'}, ['-help'])
+        result_io = solr_instance.send(:exec, 'start', {p: '4098', help: true})
         expect(result_io.read).to include('Usage: solr start')
       end
 
       describe 'when something goes wrong' do
         let(:cmd) { 'healthcheck' }
         let(:options) { {z: 'localhost:5098'} }
-        let(:boolean_flags) { nil }
         it 'raises an error with the output from the shell command' do
           expect { subject }.to raise_error(RuntimeError, /Failed to execute solr healthcheck: collection parameter is required!/)
         end
@@ -76,7 +74,6 @@ describe SolrWrapper::Instance do
       describe 'when something goes wrong' do
         let(:cmd) { 'healthcheck' }
         let(:options) { {z: 'localhost:5098'} }
-        let(:boolean_flags) { nil }
         it 'raises an error with the output from the shell command' do
           expect { subject }.to raise_error(RuntimeError, /Failed to execute solr healthcheck: collection parameter is required!/)
         end

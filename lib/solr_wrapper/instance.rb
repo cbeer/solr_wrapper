@@ -47,8 +47,7 @@ module SolrWrapper
     def start
       extract_and_configure
       if managed?
-        boolean_flags =  options[:cloud] ? ['-c'] : []
-        exec('start', {p: port}, boolean_flags)
+        exec('start', {p: port, c: options[:cloud]})
 
         # Wait for solr to start
         unless status
@@ -76,8 +75,7 @@ module SolrWrapper
     # Stop Solr and wait for it to finish exiting
     def restart
       if managed? && started?
-        boolean_flags =  options[:cloud] ? ['-c'] : []
-        exec('restart', {p: port}, boolean_flags)
+        exec('restart', {p: port, c: options[:cloud]})
       end
     end
 
@@ -242,14 +240,25 @@ module SolrWrapper
     # Run a bin/solr command
     # @param [String] cmd command to run
     # @param [Hash] options key-value pairs to transform into command line arguments
-    # @param [Array] boolean_flags to include in command (ie. "-c")
     # @return [StringIO] an IO object for the executed shell command
     # @see https://github.com/apache/lucene-solr/blob/trunk/solr/bin/solr
+    # If you want to pass a boolean flag, include it in the +options+ hash with its value set to +true+
+    # the key will be converted into a boolean flag for you.
     # @example start solr in cloud mode on port 8983
-    #   exec('start', {p: '8983'}, ["-c"])
-    def exec(cmd, options = {}, boolean_flags = [])
-      boolean_flags ||= []
-      args = [solr_binary, cmd] + boolean_flags + solr_options.merge(options).map { |k, v| ["-#{k}", "#{v}"] }.flatten
+    #   exec('start', {p: '8983', c: true})
+    def exec(cmd, options = {})
+      args = [solr_binary, cmd] + solr_options.merge(options).map do |k, v|
+        case v
+          when true
+            "-#{k}"
+          when false, nil
+            # don't return anything
+        else
+          ["-#{k}", "#{v}"]
+        end
+      end
+      args.flatten!
+      args.compact!
       if IO.respond_to? :popen4
         # JRuby
         env_str = env.map { |k, v| "#{Shellwords.escape(k)}=#{Shellwords.escape(v)}" }.join(" ")
@@ -331,10 +340,8 @@ module SolrWrapper
     end
 
     def download_dir
-      if @download_dir.nil?
-        @download_dir = options.fetch(:download_dir, Dir.tmpdir)
-        FileUtils.mkdir_p @download_dir
-      end
+      @download_dir ||= options.fetch(:download_dir, Dir.tmpdir)
+      FileUtils.mkdir_p @download_dir
       @download_dir
     end
 
