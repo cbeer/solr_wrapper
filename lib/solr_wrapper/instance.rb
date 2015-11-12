@@ -141,10 +141,10 @@ module SolrWrapper
 
     ##
     # Clean up any files solr_wrapper may have downloaded
-    # @option [Boolean] keep_zip don't delete the downloaded (zipped) copy of solr
-    def clean!(keep_zip: false)
+    def clean!
       stop
-      FileUtils.remove_entry(download_path) if File.exists?(download_path) && !keep_zip
+      remove_instance_dir!
+      FileUtils.remove_entry(download_path) if File.exists?(download_path)
       FileUtils.remove_entry(tmp_save_dir, true) if File.exists? tmp_save_dir
       FileUtils.remove_entry(md5sum_path) if File.exists? md5sum_path
       FileUtils.remove_entry(version_file) if File.exists? version_file
@@ -152,7 +152,7 @@ module SolrWrapper
 
     ##
     # Clean up any files in the Solr instance dir
-    def remove_instance_dir
+    def remove_instance_dir!
       FileUtils.remove_entry(instance_dir, true) if File.exists? instance_dir
     end
 

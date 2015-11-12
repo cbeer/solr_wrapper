@@ -11,7 +11,7 @@ namespace :solr do
   desc 'Install a clean version of solr. Replaces the existing copy if there is one.'
   task clean: :environment do
     puts "Installing clean version of solr at #{File.expand_path(@solr_instance.instance_dir)}"
-    @solr_instance.remove_instance_dir
+    @solr_instance.remove_instance_dir!
     @solr_instance.extract_and_configure
   end
 
