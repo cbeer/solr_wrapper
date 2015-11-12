@@ -9,16 +9,16 @@ namespace :solr do
   end
 
   desc 'Install a clean version of solr. Replaces the existing copy if there is one.'
-  task :clean => :environment do
-    puts "Installing clean version of solr at #{File.expand_path(@solr_instance.solr_dir)}"
-    @solr_instance.clean!(keep_zip: true)
+  task clean: :environment do
+    puts "Installing clean version of solr at #{File.expand_path(@solr_instance.instance_dir)}"
+    @solr_instance.remove_instance_dir
     @solr_instance.extract_and_configure
   end
 
   desc 'start solr'
   task start: :environment do
     begin
-      puts "Starting solr at #{File.expand_path(@solr_instance.solr_dir)} with options #{@solr_instance.options}"
+      puts "Starting solr at #{File.expand_path(@solr_instance.instance_dir)} with options #{@solr_instance.options}"
       @solr_instance.start
     rescue => e
       if e.message.include?("Port #{@solr_instance.port} is already being used by another process")

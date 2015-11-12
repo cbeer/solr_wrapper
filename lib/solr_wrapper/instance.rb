@@ -25,7 +25,7 @@ module SolrWrapper
     # @option options [Boolean] :validate Should solr_wrapper download a new md5 and (re-)validate the zip file? (default: trueF)
     # @option options [String] :md5sum Path/URL to MD5 checksum
     # @option options [String] :solr_xml Path to Solr configuration
-    # @option options [String] :extra_lib_dir Path to directory containing extra libraries to copy into solr_dir/lib
+    # @option options [String] :extra_lib_dir Path to directory containing extra libraries to copy into instance_dir/lib
     # @option options [Boolean] :verbose return verbose info when running solr commands
     # @option options [Boolean] :ignore_md5sum
     # @option options [Hash] :solr_options
@@ -146,9 +146,14 @@ module SolrWrapper
       stop
       FileUtils.remove_entry(download_path) if File.exists?(download_path) && !keep_zip
       FileUtils.remove_entry(tmp_save_dir, true) if File.exists? tmp_save_dir
-      FileUtils.remove_entry(solr_dir, true) if File.exists? solr_dir
       FileUtils.remove_entry(md5sum_path) if File.exists? md5sum_path
       FileUtils.remove_entry(version_file) if File.exists? version_file
+    end
+
+    ##
+    # Clean up any files in the Solr instance dir
+    def remove_instance_dir
+      FileUtils.remove_entry(instance_dir, true) if File.exists? instance_dir
     end
 
     ##
@@ -159,27 +164,27 @@ module SolrWrapper
 
     def configure
       raise_error_unless_extracted
-      FileUtils.cp options[:solr_xml], File.join(solr_dir, 'server', 'solr', 'solr.xml') if options[:solr_xml]
-      FileUtils.cp_r File.join(options[:extra_lib_dir], '.'), File.join(solr_dir, 'server', 'solr', 'lib') if options[:extra_lib_dir]
+      FileUtils.cp options[:solr_xml], File.join(instance_dir, 'server', 'solr', 'solr.xml') if options[:solr_xml]
+      FileUtils.cp_r File.join(options[:extra_lib_dir], '.'), File.join(instance_dir, 'server', 'solr', 'lib') if options[:extra_lib_dir]
     end
 
-    def solr_dir
-      @solr_dir ||= options.fetch(:instance_dir, File.join(Dir.tmpdir, File.basename(download_url, ".zip")))
+    def instance_dir
+      @instance_dir ||= options.fetch(:instance_dir, File.join(Dir.tmpdir, File.basename(download_url, ".zip")))
     end
 
     def extract_and_configure
-      solr_dir = extract
+      instance_dir = extract
       configure
-      solr_dir
+      instance_dir
     end
 
     # rubocop:disable Lint/RescueException
 
-    # extract a copy of solr to solr_dir
-    # Does noting if solr already exists at solr_dir
-    # @return [String] solr_dir Directory where solr has been installed
+    # extract a copy of solr to instance_dir
+    # Does noting if solr already exists at instance_dir
+    # @return [String] instance_dir Directory where solr has been installed
     def extract
-      return solr_dir if extracted?
+      return instance_dir if extracted?
 
       zip_path = download
 
@@ -198,15 +203,15 @@ module SolrWrapper
       end
 
       begin
-        FileUtils.remove_dir(solr_dir, true)
-        FileUtils.cp_r File.join(tmp_save_dir, File.basename(download_url, ".zip")), solr_dir
+        FileUtils.remove_dir(instance_dir, true)
+        FileUtils.cp_r File.join(tmp_save_dir, File.basename(download_url, ".zip")), instance_dir
         self.extracted_version = version
         FileUtils.chmod 0755, solr_binary
       rescue Exception => e
-        abort "Unable to copy #{tmp_save_dir} to #{solr_dir}: #{e.message}"
+        abort "Unable to copy #{tmp_save_dir} to #{instance_dir}: #{e.message}"
       end
 
-      solr_dir
+      instance_dir
     ensure
       FileUtils.remove_entry tmp_save_dir if File.exists? tmp_save_dir
     end
@@ -358,11 +363,11 @@ module SolrWrapper
     end
 
     def managed?
-      File.exists?(solr_dir)
+      File.exists?(instance_dir)
     end
 
     def version_file
-      options.fetch(:version_file, File.join(solr_dir, "VERSION"))
+      options.fetch(:version_file, File.join(instance_dir, "VERSION"))
     end
 
     def expected_md5sum
@@ -370,7 +375,7 @@ module SolrWrapper
     end
 
     def solr_binary
-      File.join(solr_dir, "bin", "solr")
+      File.join(instance_dir, "bin", "solr")
     end
 
     def md5sum_path
@@ -414,7 +419,7 @@ module SolrWrapper
     end
 
     def raise_error_unless_extracted
-      raise RuntimeError, "there is no solr instance at #{solr_dir}.  Run SolrWrapper.extract first." unless extracted?
+      raise RuntimeError, "there is no solr instance at #{instance_dir}.  Run SolrWrapper.extract first." unless extracted?
     end
   end
 end
