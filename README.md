@@ -62,10 +62,10 @@ SolrWrapper provides rake tasks for installing, starting and stopping solr.  To 
   require 'solr_wrapper/rake_task'
 ```
 
-You can configure the tasks by setting SOLR_OPTIONS.  For example:
+You can configure the tasks by setting `SolrWrapper.default_instance_options`.  For example:
 
 ```ruby
-SOLR_OPTIONS = {
+SolrWrapper.default_instance_options = {
     verbose: true,
     cloud: true,
     port: '8888',
