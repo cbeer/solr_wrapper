@@ -10,6 +10,10 @@ module SolrWrapper
     @default_instance_options ||= {}
   end
 
+  def self.default_instance_options=(options)
+    @default_instance_options = options
+  end
+
   def self.default_instance(options = {})
     @default_instance ||= SolrWrapper::Instance.new default_instance_options.merge(options)
   end

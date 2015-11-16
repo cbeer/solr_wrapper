@@ -12,4 +12,11 @@ describe SolrWrapper do
       end
     end
   end
+
+  describe ".default_instance_options=" do
+    it "sets default options" do
+      SolrWrapper.default_instance_options = {port: '1234'}
+      expect( SolrWrapper.default_instance_options[:port]). to eq '1234'
+    end
+  end
 end
