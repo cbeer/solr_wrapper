@@ -135,6 +135,12 @@ module SolrWrapper
     end
 
     ##
+    # Get the host this Solr instance is bound to
+    def host
+      '127.0.0.1'
+    end
+
+    ##
     # Get the port this Solr instance is running at
     def port
       @port ||= options.fetch(:port, random_open_port).to_s
@@ -160,7 +166,7 @@ module SolrWrapper
     ##
     # Get a (likely) URL to the solr instance
     def url
-      "http://127.0.0.1:#{port}/solr/"
+      "http://#{host}:#{port}/solr/"
     end
 
     def configure
