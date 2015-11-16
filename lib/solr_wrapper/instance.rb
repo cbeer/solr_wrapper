@@ -329,7 +329,7 @@ module SolrWrapper
     end
 
     def version
-      @version ||= options.fetch(:version, default_solr_version)
+      @version ||= options.fetch(:version, SolrWrapper.default_solr_version)
     end
 
     def solr_options
@@ -338,10 +338,6 @@ module SolrWrapper
 
     def env
       options.fetch(:env, {})
-    end
-
-    def default_solr_version
-      SolrWrapper.default_solr_version
     end
 
     def download_path

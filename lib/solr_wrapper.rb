@@ -7,7 +7,9 @@ module SolrWrapper
   end
 
   def self.default_instance_options
-    @default_instance_options ||= {}
+    @default_instance_options ||= {
+      version: SolrWrapper.default_solr_version
+    }
   end
 
   def self.default_instance_options=(options)
