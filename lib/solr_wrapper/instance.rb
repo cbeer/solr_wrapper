@@ -4,6 +4,7 @@ require 'json'
 require 'open-uri'
 require 'ruby-progressbar'
 require 'securerandom'
+require 'socket'
 require 'stringio'
 require 'tmpdir'
 require 'zip'
@@ -136,7 +137,7 @@ module SolrWrapper
     ##
     # Get the port this Solr instance is running at
     def port
-      options.fetch(:port, "8983").to_s
+      @port ||= options.fetch(:port, random_open_port).to_s
     end
 
     ##
@@ -411,6 +412,16 @@ module SolrWrapper
     def extracted_version=(version)
       File.open(version_file, "w") do |f|
         f.puts version
+      end
+    end
+
+    def random_open_port
+      socket = Socket.new(:INET, :STREAM, 0)
+      begin
+        socket.bind(Addrinfo.tcp('127.0.0.1', 0))
+        socket.local_address.ip_port
+      ensure
+        socket.close
       end
     end
 
