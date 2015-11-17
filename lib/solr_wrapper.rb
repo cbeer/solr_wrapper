@@ -7,7 +7,10 @@ module SolrWrapper
   end
 
   def self.default_instance_options
-    @default_instance_options ||= {}
+    @default_instance_options ||= {
+      port: '8983',
+      version: SolrWrapper.default_solr_version
+    }
   end
 
   def self.default_instance_options=(options)

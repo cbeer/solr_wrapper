@@ -4,6 +4,7 @@ require 'json'
 require 'open-uri'
 require 'ruby-progressbar'
 require 'securerandom'
+require 'socket'
 require 'stringio'
 require 'tmpdir'
 require 'zip'
@@ -134,9 +135,15 @@ module SolrWrapper
     end
 
     ##
+    # Get the host this Solr instance is bound to
+    def host
+      '127.0.0.1'
+    end
+
+    ##
     # Get the port this Solr instance is running at
     def port
-      options.fetch(:port, "8983").to_s
+      @port ||= options.fetch(:port, random_open_port).to_s
     end
 
     ##
@@ -159,7 +166,7 @@ module SolrWrapper
     ##
     # Get a (likely) URL to the solr instance
     def url
-      "http://127.0.0.1:#{port}/solr/"
+      "http://#{host}:#{port}/solr/"
     end
 
     def configure
@@ -329,7 +336,7 @@ module SolrWrapper
     end
 
     def version
-      @version ||= options.fetch(:version, default_solr_version)
+      @version ||= options.fetch(:version, SolrWrapper.default_solr_version)
     end
 
     def solr_options
@@ -338,10 +345,6 @@ module SolrWrapper
 
     def env
       options.fetch(:env, {})
-    end
-
-    def default_solr_version
-      SolrWrapper.default_solr_version
     end
 
     def download_path
@@ -415,6 +418,16 @@ module SolrWrapper
     def extracted_version=(version)
       File.open(version_file, "w") do |f|
         f.puts version
+      end
+    end
+
+    def random_open_port
+      socket = Socket.new(:INET, :STREAM, 0)
+      begin
+        socket.bind(Addrinfo.tcp('127.0.0.1', 0))
+        socket.local_address.ip_port
+      ensure
+        socket.close
       end
     end
 
