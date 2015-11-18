@@ -145,6 +145,25 @@ module SolrWrapper
       create(name, options)
     end
 
+    ##
+    # Tell solr to reload a collection and its configuration
+    # @param [String] name of the collection
+    def reload_collection(name)
+      begin
+        open url + "admin/collections?action=RELOAD&wt=json&name=#{name}"
+      rescue OpenURI::HTTPError => e
+        response_body = e.io.read
+        case response_body
+          when /Solr instance is not running in SolrCloud mode./
+            raise SolrWrapper::NotInCloudModeError, response_body
+          when /Could not find collection/
+            raise SolrWrapper::CollectionNotFoundError, response_body
+          else
+            response_body
+        end
+      end
+    end
+
     ###
     # Check whether a collection (or core) exists in solr
     # @param [String] name collection name
@@ -169,7 +188,7 @@ module SolrWrapper
           when /ERROR: Collection #{name} not found!/
             raise SolrWrapper::CollectionNotFoundError, e.message
           when /Could not connect to ZooKeeper/, /port out of range/, /org.apache.zookeeper.ClientCnxn\$SendThread; Session 0x0 for server null, unexpected error, closing socket connection and attempting reconnect/
-            raise SolrWrapper::ZookeeperNotRunning, "Zookeeper is not running at #{host}:#{zkport}. Are you sure solr is running in cloud mode?"
+            raise SolrWrapper::ZookeeperNotRunningError, "Zookeeper is not running at #{host}:#{zkport}. Are you sure solr is running in cloud mode?"
         else
           raise e
         end
