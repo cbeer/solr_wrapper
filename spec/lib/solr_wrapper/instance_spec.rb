@@ -17,6 +17,28 @@ describe SolrWrapper::Instance do
       end
     end
   end
+  describe 'reload_collection' do
+    let(:collection_name) { 'test_collection' }
+    let(:not_in_cloud_mode_response) { '{"responseHeader":{"status":400,"QTime":2},"error":{"msg":"Solr instance is not running in SolrCloud mode.","code":400}}' }
+    let(:collection_not_found_response) { '{"responseHeader"=>{"status"=>400, "QTime"=>42}, "Operation reload caused exception:"=>"org.apache.solr.common.SolrException:org.apache.solr.common.SolrException: Could not find collection : test_collection", "exception"=>{"msg"=>"Could not find collection : test_collection", "rspCode"=>400}, "error"=>{"msg"=>"Could not find collection : test_collection", "code"=>400}}' }
+    subject { solr_instance.reload_collection(collection_name) }
+    it 'uses the Collections (REST) API to reload the collection' do
+      expect(solr_instance).to receive(:open).with(solr_instance.url+"admin/collections?action=RELOAD&wt=json&name=#{collection_name}")
+      subject
+    end
+    it 'when solr is not running raises the Errno::ECONNREFUSED error' do
+      expect(solr_instance).to receive(:open).and_raise(Errno::ECONNREFUSED)
+      expect { subject }.to raise_error(Errno::ECONNREFUSED)
+    end
+    it 'when solr is not in cloud mode raises a NotInCloudModeError' do
+      expect(solr_instance).to receive(:open).and_raise(OpenURI::HTTPError.new('message',StringIO.new(not_in_cloud_mode_response)))
+      expect { subject }.to raise_error(SolrWrapper::NotInCloudModeError)
+    end
+    it 'when the collection does not exist raises a CollectionNotFoundError' do
+      expect(solr_instance).to receive(:open).and_raise(OpenURI::HTTPError.new('message',StringIO.new(collection_not_found_response)))
+      expect { subject }.to raise_error(SolrWrapper::CollectionNotFoundError)
+    end
+  end
   describe 'destroy' do
     subject { solr_instance.destroy }
     it 'stops solr and deletes the entire instance_dir' do
@@ -99,11 +121,11 @@ describe SolrWrapper::Instance do
         let(:wrapper_error_message) { "Zookeeper is not running at #{solr_instance.host}:#{solr_instance.zkport}. Are you sure solr is running in cloud mode?" }
         it 'raises an appropriate error' do
           expect(solr_instance).to receive(:exec).and_raise(RuntimeError, "ERROR: java.lang.IllegalArgumentException: port out of range:65831")
-          expect{ solr_instance.healthcheck('foo') }.to raise_error(SolrWrapper::ZookeeperNotRunning, wrapper_error_message)
+          expect{ solr_instance.healthcheck('foo') }.to raise_error(SolrWrapper::ZookeeperNotRunningError, wrapper_error_message)
           expect(solr_instance).to receive(:exec).and_raise(RuntimeError, "org.apache.zookeeper.ClientCnxn$SendThread; Session 0x0 for server null, unexpected error, closing socket connection and attempting reconnect")
-          expect{ solr_instance.healthcheck('foo') }.to raise_error(SolrWrapper::ZookeeperNotRunning, wrapper_error_message)
+          expect{ solr_instance.healthcheck('foo') }.to raise_error(SolrWrapper::ZookeeperNotRunningError, wrapper_error_message)
           expect(solr_instance).to receive(:exec).and_raise(RuntimeError, "ERROR: java.util.concurrent.TimeoutException: Could not connect to ZooKeeper 127.0.0.1:58499 within 10000 ms")
-          expect{ solr_instance.healthcheck('foo') }.to raise_error(SolrWrapper::ZookeeperNotRunning, wrapper_error_message)
+          expect{ solr_instance.healthcheck('foo') }.to raise_error(SolrWrapper::ZookeeperNotRunningError, wrapper_error_message)
         end
       end
     end

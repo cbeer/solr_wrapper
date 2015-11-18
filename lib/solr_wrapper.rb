@@ -3,7 +3,8 @@ require 'solr_wrapper/instance'
 
 module SolrWrapper
   class CollectionNotFoundError < RuntimeError ; end
-  class ZookeeperNotRunning < RuntimeError ; end
+  class NotInCloudModeError < RuntimeError ; end
+  class ZookeeperNotRunningError < RuntimeError ; end
   def self.default_solr_version
     '5.3.1'
   end
