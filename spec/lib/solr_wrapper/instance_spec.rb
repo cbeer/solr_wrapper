@@ -17,6 +17,30 @@ describe SolrWrapper::Instance do
       end
     end
   end
+  describe 'configure' do
+    subject { solr_instance.configure }
+    context 'when extra_lib_dir is specified' do
+      before { solr_instance.options[:extra_lib_dir] = 'foo/bar' }
+      it 'copies the contents of extra_lib_dir into the solr/lib directory' do
+        expect(File).to receive(:exist?).with('foo/bar').and_return(true)
+        expect(FileUtils).to receive(:cp_r).with('foo/bar/.', "#{solr_instance.instance_dir}/server/solr/lib")
+        subject
+      end
+      it 'does not try to copy anything if extra_lib_dir does not exist' do
+        expect(File).to receive(:exist?).with('foo/bar').and_return(false)
+        expect(FileUtils).to_not receive(:cp_r)
+        allow(solr_instance).to receive(:puts)
+        subject
+      end
+    end
+    context 'when extra_lib_dir is not specified' do
+      it 'does not try to copy anything' do
+        expect(File).to_not receive(:exist?)
+        expect(FileUtils).to_not receive(:cp_r)
+        subject
+      end
+    end
+  end
   describe 'destroy' do
     subject { solr_instance.destroy }
     it 'stops solr and deletes the entire instance_dir' do

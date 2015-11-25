@@ -235,7 +235,13 @@ module SolrWrapper
     def configure
       raise_error_unless_extracted
       FileUtils.cp options[:solr_xml], File.join(instance_dir, 'server', 'solr', 'solr.xml') if options[:solr_xml]
-      FileUtils.cp_r File.join(options[:extra_lib_dir], '.'), File.join(instance_dir, 'server', 'solr', 'lib') if options[:extra_lib_dir]
+      if options[:extra_lib_dir]
+        if File.exist?(options[:extra_lib_dir])
+          FileUtils.cp_r File.join(options[:extra_lib_dir], '.'), File.join(instance_dir, 'server', 'solr', 'lib')
+        else
+          puts "You specified #{options[:extra_lib_dir]} as the :extra_lib_dir but that directory does not exist!"
+        end
+      end
     end
 
     def instance_dir
