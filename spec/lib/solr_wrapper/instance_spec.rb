@@ -107,6 +107,7 @@ describe SolrWrapper::Instance do
       @solr_instance.stop
     end
     describe 'create' do
+      let(:collection_name) { 'collection_from_create_test' }
       subject { solr_instance.create(collection_name, dir:collection_config_dir) }
       after { solr_instance.delete(collection_name) }
       it 'creates a collection' do
@@ -115,7 +116,16 @@ describe SolrWrapper::Instance do
         expect(solr_instance.collection_exists?(collection_name)).to eq true
       end
     end
+    describe 'create_reloadable_collection' do
+      subject { solr_instance.create_reloadable_collection(collection_name, dir:collection_config_dir) }
+      it 'uploads the configs to zookeeper and then creates the collection' do
+        expect(solr_instance).to receive(:upload_collection_config).with(collection_name, {dir:collection_config_dir})
+        expect(solr_instance).to receive(:create).with(collection_name, {n:collection_name}).and_return(collection_name)
+        expect(subject).to eq collection_name
+      end
+    end
     describe 'delete' do
+      let(:collection_name) { 'collection_from_delete_test' }
       subject { solr_instance.delete(existing_collection) }
       it 'deletes a collection' do
         expect(solr_instance.collection_exists?(existing_collection)).to eq true
@@ -146,7 +156,31 @@ describe SolrWrapper::Instance do
         end
       end
     end
+    describe 'create_or_reload' do
+      subject { solr_instance.create_or_reload(collection_name, dir:collection_config_dir) }
+      context 'when the collection does not exist' do
+        before do
+          expect(solr_instance).to receive(:collection_exists?).and_return(false)
+        end
+        it 'creates the collection' do
+          expect(solr_instance).to_not receive(:delete)
+          expect(solr_instance).to receive(:create_reloadable_collection).with(collection_name, dir:collection_config_dir)
+          subject
+        end
+      end
+      context 'when the collection already exists' do
+        before do
+          expect(solr_instance).to receive(:collection_exists?).and_return(true)
+        end
+        it 'tells solr admin to reload the collection' do
+          expect(solr_instance).to_not receive(:delete)
+          expect(solr_instance).to receive(:reload_collection).with(collection_name)
+          subject
+        end
+      end
+    end
     describe 'healthcheck' do
+      let(:collection_name) { 'collection_from_healthcheck_test' }
       context 'when the collection does not exist' do
         subject { solr_instance.healthcheck('nonexistent') }
         it 'raises an error' do

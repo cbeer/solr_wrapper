@@ -134,15 +134,55 @@ module SolrWrapper
     end
 
     ##
-    # Create or Update a collection (or core) in solr
-    # It is not possible to 'update' a core.  You have
+    # Create or Re-Create a collection (or core) in solr
+    # If you created a collection/core using the default 'create' method
+    # Then it is not possible to 'update' its configs.  You have
     # to delete it and create again.
+    # Alternatively, if you used upload_collection_config to put the configs
+    # in zookeeper _before_ creating the collection you can use `create_or_reload`
+    # which will refresh the collection without deleting it.
     # @param [String] name collection name
     # @option options [String] :dir
     # @return [String] name of the collection
     def create_or_update(name, options={})
       delete(name, options) if collection_exists?(name)
       create(name, options)
+    end
+
+    # Refresh a collection's configuration or create the collection if it doesn't exist
+    # *This method only works when solr is in cloud mode.*
+    # @param [String] name collection name
+    # @param [Hash] options
+    # @option options [String] :dir path to the new config files you want to upload into zookeeper
+    # @option options [String] :config_name (optional) configname to use in zookeeper (defaults to the collection name)
+    # @return [String] name of the collection
+    def create_or_reload(name, options={})
+      if collection_exists?(name)
+        if options[:dir]
+          confname = options.fetch(:config_name, name)
+          upload_collection_config(confname, options)
+        end
+        reload_collection(name)
+      else
+        create_reloadable_collection(name, options)
+      end
+    end
+
+    # Creates a collection that can be reloaded later
+    # Instead of creating a collection using solr's defaults
+    # Uploads the collection's configuration files to zookeeper
+    # and then creates the collection using that named set of configs.
+    # By default, the zookeeper confname is the same as the collection name
+    # you can override that by setting options[:config_name]
+    # *This method only works when solr is in cloud mode.*
+    # @param [String] name collection name
+    # @param [Hash] options
+    # @option options [String] :dir path to the config files for this collection
+    # @option options [String] :config_name (optional) configname to use in zookeeper (defaults to the collection name)
+    def create_reloadable_collection(name, options={})
+      confname = options.fetch(:config_name, name)
+      upload_collection_config(confname, options)
+      create(name, {n: confname})
     end
 
     ##
