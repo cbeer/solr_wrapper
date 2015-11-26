@@ -49,7 +49,7 @@ module SolrWrapper
     def start
       extract_and_configure
       if managed?
-        exec('start', p: port, c: options[:cloud])
+        exec_solr('start', p: port, c: options[:cloud])
 
         # Wait for solr to start
         unless status
@@ -64,7 +64,7 @@ module SolrWrapper
     def stop
       if managed? && started?
 
-        exec('stop', p: port)
+        exec_solr('stop', p: port)
         # Wait for solr to stop
         while status
           sleep 1
@@ -79,7 +79,7 @@ module SolrWrapper
     # @return [StringIO] output from executing the command
     def restart
       if managed? && started?
-        exec('restart', p: port, c: options[:cloud])
+        exec_solr('restart', p: port, c: options[:cloud])
       end
     end
 
@@ -98,7 +98,7 @@ module SolrWrapper
     def status
       return true unless managed?
 
-      out = exec('status').read
+      out = exec_solr('status').read
       out =~ /running on port #{port}/
     end
 
@@ -120,7 +120,7 @@ module SolrWrapper
       create_options = { p: port }
       create_options[:c] = name
       create_options[:d] = options[:dir] if options[:dir]
-      exec("create", create_options)
+      exec_solr("create", create_options)
 
       name
     end
@@ -130,7 +130,7 @@ module SolrWrapper
     # @param [String] name collection name
     # @return [StringIO] output from executing the command
     def delete(name, _options = {})
-      exec("delete", c: name, p: port)
+      exec_solr("delete", c: name, p: port)
     end
 
     ##
@@ -163,7 +163,7 @@ module SolrWrapper
     # @param [String] name collection name
     def healthcheck(name, _options = {})
       begin
-        exec("healthcheck", c: name, z:"#{host}:#{zkport}")
+        exec_solr("healthcheck", c: name, z:"#{host}:#{zkport}")
       rescue RuntimeError => e
         case e.message
           when /ERROR: Collection #{name} not found!/
@@ -174,6 +174,24 @@ module SolrWrapper
           raise e
         end
       end
+    end
+
+    # Use zookeeper cli script to upload configs into +solr_instance+ and store them as +config_name+
+    # This makes it possible for multiple collections to share configs and allows you to update collection
+    # config files on the fly
+    # @param [String] config_name The confName to use in zookeeper
+    # @option options [String] :dir source directory for configuration. Defaults to "#{SolrWrapper.source_config_dir}/#{collection_name}/conf"
+    # @example Make 2 collections that share the same config, then modify the configs and reload the collecitons
+    #   instance.upload_collection_config('metastore', dir:'myconfigs')
+    #   instance.create('metastore1', config_name:'metastore')
+    #   instance.create('metastore2', config_name:'metastore')
+    #   # upload modified configurations
+    #   instance.upload_collection_config('metastore', dir:'modifiedconfigs')
+    #   instance.reload_collection('metastore1')
+    #   instance.reload_collection('metastore2')
+    def upload_collection_config(config_name, options={})
+      conf_dir = options.fetch(:dir, "#{SolrWrapper.source_config_dir}/#{config_name}/conf")
+      exec_zookeeper('upconfig', confdir: conf_dir, confname: config_name, zkhost: zkhost, solrhome: instance_dir)
     end
 
 
@@ -203,6 +221,11 @@ module SolrWrapper
     # Get the port this Solr instance is running at
     def port
       @port ||= options.fetch(:port, random_open_port).to_s
+    end
+
+    # Full Zookeeper host address - ie. 'localhost:9983'
+    def zkhost
+      "#{host}:#{zkport}"
     end
 
     def zkport
@@ -283,6 +306,7 @@ module SolrWrapper
         FileUtils.cp_r File.join(tmp_save_dir, File.basename(download_url, ".zip")), instance_dir
         self.extracted_version = version
         FileUtils.chmod 0755, solr_binary
+        FileUtils.chmod(0755, zookeeper_cli)
       rescue Exception => e
         abort "Unable to copy #{tmp_save_dir} to #{instance_dir}: #{e.message}"
       end
@@ -319,70 +343,16 @@ module SolrWrapper
       end
     end
 
-    ##
-    # Run a bin/solr command
-    # @param [String] cmd command to run
-    # @param [Hash] options key-value pairs to transform into command line arguments
-    # @return [StringIO] an IO object for the executed shell command
-    # @see https://github.com/apache/lucene-solr/blob/trunk/solr/bin/solr
-    # If you want to pass a boolean flag, include it in the +options+ hash with its value set to +true+
-    # the key will be converted into a boolean flag for you.
-    # @example start solr in cloud mode on port 8983
-    #   exec('start', {p: '8983', c: true})
-    def exec(cmd, options = {})
-      silence_output = !options.delete(:output)
+    def exec_solr(cmd, options={})
+      SolrWrapper::CommandLineWrapper.exec(solr_binary, cmd, solr_options.merge(options), env)
+    end
 
-      args = [solr_binary, cmd] + solr_options.merge(options).map do |k, v|
-        case v
-        when true
-          "-#{k}"
-        when false, nil
-          # don't return anything
-        else
-          ["-#{k}", "#{v}"]
-        end
-      end.flatten.compact
-
-      if IO.respond_to? :popen4
-        # JRuby
-        env_str = env.map { |k, v| "#{Shellwords.escape(k)}=#{Shellwords.escape(v)}" }.join(" ")
-        pid, input, output, error = IO.popen4(env_str + " " + args.join(" "))
-        @pid = pid
-        stringio = StringIO.new
-        if verbose? && !silence_output
-          IO.copy_stream(output, $stderr)
-          IO.copy_stream(error, $stderr)
-        else
-          IO.copy_stream(output, stringio)
-          IO.copy_stream(error, stringio)
-        end
-
-        input.close
-        output.close
-        error.close
-        exit_status = Process.waitpid2(@pid).last
-      else
-        IO.popen(env, args + [err: [:child, :out]]) do |io|
-          stringio = StringIO.new
-
-          if verbose? && !silence_output
-            IO.copy_stream(io, $stderr)
-          else
-            IO.copy_stream(io, stringio)
-          end
-
-          @pid = io.pid
-
-          _, exit_status = Process.wait2(io.pid)
-        end
-      end
-
-      stringio.rewind
-      if exit_status != 0
-        raise "Failed to execute solr #{cmd}: #{stringio.read}"
-      end
-
-      stringio
+    def exec_zookeeper(cmd, options={})
+      # the zookeeper cli expects commands to be identified by -cmd flag instead of
+      # simply using the first argument
+      # ie. `zkcli.sh -cmd bootstrap` instead of `zkcli.sh boostrap`
+      options[:cmd] = cmd
+      SolrWrapper::CommandLineWrapper.exec(zookeeper_cli, nil, solr_options.merge(options), env)
     end
 
     private
@@ -448,6 +418,10 @@ module SolrWrapper
 
     def solr_binary
       File.join(instance_dir, "bin", "solr")
+    end
+
+    def zookeeper_cli
+      File.join(instance_dir, "server","scripts","cloud-scripts","zkcli.sh")
     end
 
     def md5sum_path

@@ -49,6 +49,28 @@ describe SolrWrapper::Instance do
       subject
     end
   end
+  describe 'exec_solr' do
+    it 'executes a call to solr' do
+      expect(SolrWrapper::CommandLineWrapper).to receive(:exec).with(solr_instance.send(:solr_binary), 'start', {help: true}, solr_instance.send(:env))
+      solr_instance.send(:exec_solr, 'start', help: true)
+    end
+  end
+  describe 'exec_zookeeper' do
+    it 'converts the command to options[:cmd] and executes a call to zookeeper' do
+      expect(SolrWrapper::CommandLineWrapper).to receive(:exec).with(solr_instance.send(:zookeeper_cli), nil, {cmd:'bootstrap', help: true}, solr_instance.send(:env))
+      solr_instance.send(:exec_zookeeper, 'bootstrap', help: true)
+    end
+  end
+  describe 'upload_collection_config' do
+    let(:config_name) { 'customconfig' }
+    subject { solr_instance.upload_collection_config(config_name, dir:'path_to_my_configs') }
+    it 'calls upconfig command on the zookeeper cli script' do
+      expect(solr_instance).to receive(:exec_zookeeper).with('upconfig', {confdir: 'path_to_my_configs', confname: config_name, zkhost: solr_instance.zkhost, solrhome: solr_instance.instance_dir})
+      subject
+    end
+  end
+
+  # This set of tests starts solr and then stops it when they're done running
   describe 'cloud commands' do
     let(:collection_name) { 'test_collection' }
     let(:existing_collection) { solr_instance.create(collection_name) }
@@ -122,33 +144,13 @@ describe SolrWrapper::Instance do
       context 'when zookeeper is not running' do
         let(:wrapper_error_message) { "Zookeeper is not running at #{solr_instance.host}:#{solr_instance.zkport}. Are you sure solr is running in cloud mode?" }
         it 'raises an appropriate error' do
-          expect(solr_instance).to receive(:exec).and_raise(RuntimeError, "ERROR: java.lang.IllegalArgumentException: port out of range:65831")
+          expect(solr_instance).to receive(:exec_solr).and_raise(RuntimeError, "ERROR: java.lang.IllegalArgumentException: port out of range:65831")
           expect{ solr_instance.healthcheck('foo') }.to raise_error(SolrWrapper::ZookeeperNotRunning, wrapper_error_message)
-          expect(solr_instance).to receive(:exec).and_raise(RuntimeError, "org.apache.zookeeper.ClientCnxn$SendThread; Session 0x0 for server null, unexpected error, closing socket connection and attempting reconnect")
+          expect(solr_instance).to receive(:exec_solr).and_raise(RuntimeError, "org.apache.zookeeper.ClientCnxn$SendThread; Session 0x0 for server null, unexpected error, closing socket connection and attempting reconnect")
           expect{ solr_instance.healthcheck('foo') }.to raise_error(SolrWrapper::ZookeeperNotRunning, wrapper_error_message)
-          expect(solr_instance).to receive(:exec).and_raise(RuntimeError, "ERROR: java.util.concurrent.TimeoutException: Could not connect to ZooKeeper 127.0.0.1:58499 within 10000 ms")
+          expect(solr_instance).to receive(:exec_solr).and_raise(RuntimeError, "ERROR: java.util.concurrent.TimeoutException: Could not connect to ZooKeeper 127.0.0.1:58499 within 10000 ms")
           expect{ solr_instance.healthcheck('foo') }.to raise_error(SolrWrapper::ZookeeperNotRunning, wrapper_error_message)
         end
-      end
-    end
-  end
-  describe 'exec' do
-    let(:cmd) { 'start' }
-    let(:options) { { p: '4098', help: true } }
-    subject { solr_instance.send(:exec, cmd, options) }
-    it 'runs the command' do
-      result_io = subject
-      expect(result_io.read).to include('Usage: solr start')
-    end
-    it 'accepts boolean flags' do
-      result_io = solr_instance.send(:exec, 'start', p: '4098', help: true)
-      expect(result_io.read).to include('Usage: solr start')
-    end
-    describe 'when something goes wrong' do
-      let(:cmd) { 'healthcheck' }
-      let(:options) { { z: 'localhost:5098' } }
-      it 'raises an error with the output from the shell command' do
-        expect { subject }.to raise_error(RuntimeError, /Failed to execute solr healthcheck: collection parameter is required!/)
       end
     end
   end

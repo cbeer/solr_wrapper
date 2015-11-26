@@ -47,10 +47,15 @@ describe SolrWrapper do
           extra_lib_dir: File.join('myconfigs','lib'),
       }
     }
-    subject { SolrWrapper.default_instance }
-    it "uses default_instance_options" do
-      SolrWrapper.default_instance_options = custom_options
-      expect(subject.options).to eq custom_options
+    context 'when @default_instance is not set' do
+      before do
+        SolrWrapper.remove_instance_variable(:@default_instance)
+      end
+      subject { SolrWrapper.default_instance }
+      it "uses default_instance_options" do
+        SolrWrapper.default_instance_options = custom_options
+        expect(subject.options).to eq custom_options
+      end
     end
   end
 
@@ -58,6 +63,16 @@ describe SolrWrapper do
     it "sets default options" do
       SolrWrapper.default_instance_options = { port: '1234' }
       expect(SolrWrapper.default_instance_options[:port]). to eq '1234'
+    end
+  end
+
+  describe ".source_config_dir" do
+    it "defaults to 'solr'" do
+      expect(SolrWrapper.source_config_dir).to eq 'solr'
+    end
+    it 'can be set' do
+      SolrWrapper.source_config_dir = 'myconfigs'
+      expect(SolrWrapper.source_config_dir).to eq 'myconfigs'
     end
   end
 end

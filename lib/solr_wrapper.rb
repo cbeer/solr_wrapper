@@ -1,5 +1,6 @@
 require 'solr_wrapper/version'
 require 'solr_wrapper/instance'
+require 'solr_wrapper/command_line_wrapper'
 
 module SolrWrapper
   class CollectionNotFoundError < RuntimeError ; end
@@ -21,6 +22,15 @@ module SolrWrapper
 
   def self.default_instance(options = {})
     @default_instance ||= SolrWrapper::Instance.new default_instance_options.merge(options)
+  end
+
+  # Source directory to copy configurations from
+  def self.source_config_dir
+    @source_config_dir ||= 'solr'
+  end
+
+  def self.source_config_dir=(source_config_dir)
+    @source_config_dir = source_config_dir
   end
 
   ##
