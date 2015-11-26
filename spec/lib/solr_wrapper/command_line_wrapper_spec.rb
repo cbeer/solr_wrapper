@@ -3,7 +3,9 @@ describe SolrWrapper::CommandLineWrapper do
   let(:executable) { solr_instance.send(:solr_binary) }
   let(:cmd) { 'start' }
   let(:options) { { p: '4098', help: true } }
-
+  before do
+    solr_instance.extract
+  end
   describe '.exec' do
     subject { described_class.exec(executable, cmd, options) }
     it 'runs the command' do
