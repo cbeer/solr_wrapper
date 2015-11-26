@@ -13,6 +13,29 @@ describe SolrWrapper do
     end
   end
 
+  describe '.default_instance' do
+    let(:custom_options) {
+      {
+          verbose: true,
+          cloud: true,
+          port: '8983',
+          version: '5.3.1',
+          instance_dir: 'solr',
+          extra_lib_dir: File.join('myconfigs','lib'),
+      }
+    }
+    subject { SolrWrapper.default_instance }
+    context 'when @default_instance is not set' do
+      before do
+        SolrWrapper.remove_instance_variable(:@default_instance)
+      end
+      it "uses default_instance_options" do
+        SolrWrapper.default_instance_options = custom_options
+        expect(subject.options).to eq custom_options
+      end
+    end
+  end
+
   describe ".default_instance_options=" do
     it "sets default options" do
       SolrWrapper.default_instance_options = { port: '1234' }
