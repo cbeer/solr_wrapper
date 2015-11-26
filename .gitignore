@@ -1,6 +1,7 @@
 Gemfile.lock
 *.gem
 *.rbc
+.byebug_history
 /.config
 /coverage/
 /InstalledFiles

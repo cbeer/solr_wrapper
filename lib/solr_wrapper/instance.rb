@@ -45,6 +45,7 @@ module SolrWrapper
 
     ##
     # Start Solr and wait for it to become available
+    # @return [StringIO] output from executing the command
     def start
       extract_and_configure
       if managed?
@@ -59,6 +60,7 @@ module SolrWrapper
 
     ##
     # Stop Solr and wait for it to finish exiting
+    # @return [StringIO] output from executing the command
     def stop
       if managed? && started?
 
@@ -74,10 +76,21 @@ module SolrWrapper
 
     ##
     # Stop Solr and wait for it to finish exiting
+    # @return [StringIO] output from executing the command
     def restart
       if managed? && started?
         exec('restart', p: port, c: options[:cloud])
       end
+    end
+
+    ##
+    # Stop solr and remove the install directory
+    # Warning: This will delete the entire instance_dir
+    # @return [String] path to the instance_dir that was deleted
+    def destroy
+      stop
+      FileUtils.rm_rf instance_dir
+      instance_dir
     end
 
     ##
@@ -91,32 +104,78 @@ module SolrWrapper
 
     ##
     # Is Solr running?
+    # @return [Boolean] whether solr is running
     def started?
       !!status
     end
 
     ##
-    # Create a new collection in solr
+    # Create a new collection (or core) in solr
+    # @param [String] name of the collection to create (defaults to a generated hex value)
     # @param [Hash] options
-    # @option options [String] :name
     # @option options [String] :dir
-    def create(options = {})
-      options[:name] ||= SecureRandom.hex
-
+    # @return [String] name of the collection created
+    def create(name=nil, options = {})
+      name ||= SecureRandom.hex
       create_options = { p: port }
-      create_options[:c] = options[:name] if options[:name]
+      create_options[:c] = name
       create_options[:d] = options[:dir] if options[:dir]
       exec("create", create_options)
 
-      options[:name]
+      name
     end
 
     ##
-    # Create a new collection in solr
+    # Delete a collection (or core) from solr
     # @param [String] name collection name
+    # @return [StringIO] output from executing the command
     def delete(name, _options = {})
       exec("delete", c: name, p: port)
     end
+
+    ##
+    # Create or Update a collection (or core) in solr
+    # It is not possible to 'update' a core.  You have
+    # to delete it and create again.
+    # @param [String] name collection name
+    # @option options [String] :dir
+    # @return [String] name of the collection
+    def create_or_update(name, options={})
+      delete(name, options) if collection_exists?(name)
+      create(name, options)
+    end
+
+    ###
+    # Check whether a collection (or core) exists in solr
+    # @param [String] name collection name
+    def collection_exists?(name)
+      begin
+        # Delete the collection if it exists
+        healthcheck(name)
+        true
+      rescue SolrWrapper::CollectionNotFoundError
+        false
+      end
+    end
+
+    ###
+    # Run solr healthcheck command for a collection (or core)
+    # @param [String] name collection name
+    def healthcheck(name, _options = {})
+      begin
+        exec("healthcheck", c: name, z:"#{host}:#{zkport}")
+      rescue RuntimeError => e
+        case e.message
+          when /ERROR: Collection #{name} not found!/
+            raise SolrWrapper::CollectionNotFoundError, e.message
+          when /Could not connect to ZooKeeper/, /port out of range/, /org.apache.zookeeper.ClientCnxn\$SendThread; Session 0x0 for server null, unexpected error, closing socket connection and attempting reconnect/
+            raise SolrWrapper::ZookeeperNotRunning, "Zookeeper is not running at #{host}:#{zkport}. Are you sure solr is running in cloud mode?"
+        else
+          raise e
+        end
+      end
+    end
+
 
     ##
     # Create a new collection, run the block, and then clean up the collection
@@ -126,7 +185,7 @@ module SolrWrapper
     def with_collection(options = {})
       return yield if options.empty?
 
-      name = create(options)
+      name = create(options[:name], options)
       begin
         yield name
       ensure
@@ -144,6 +203,10 @@ module SolrWrapper
     # Get the port this Solr instance is running at
     def port
       @port ||= options.fetch(:port, random_open_port).to_s
+    end
+
+    def zkport
+      @zkport ||= (port.to_i + 1000).to_s
     end
 
     ##
@@ -172,7 +235,13 @@ module SolrWrapper
     def configure
       raise_error_unless_extracted
       FileUtils.cp options[:solr_xml], File.join(instance_dir, 'server', 'solr', 'solr.xml') if options[:solr_xml]
-      FileUtils.cp_r File.join(options[:extra_lib_dir], '.'), File.join(instance_dir, 'server', 'solr', 'lib') if options[:extra_lib_dir]
+      if options[:extra_lib_dir]
+        if File.exist?(options[:extra_lib_dir])
+          FileUtils.cp_r File.join(options[:extra_lib_dir], '.'), File.join(instance_dir, 'server', 'solr', 'lib')
+        else
+          puts "You specified #{options[:extra_lib_dir]} as the :extra_lib_dir but that directory does not exist!"
+        end
+      end
     end
 
     def instance_dir
