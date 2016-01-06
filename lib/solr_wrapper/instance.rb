@@ -87,6 +87,8 @@ module SolrWrapper
 
       out = exec('status').read
       out =~ /running on port #{port}/
+    rescue
+      false
     end
 
     ##
