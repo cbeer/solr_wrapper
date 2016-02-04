@@ -45,10 +45,17 @@ end.parse!
 # default to verbose
 options[:verbose] = true if options[:verbose].nil?
 
-SolrWrapper.wrap(options) do |conn|
+instance = SolrWrapper.default_instance(options)
+$stderr.print "Starting Solr #{instance.version}..."
+instance.wrap do |conn|
   conn.with_collection(collection_options) do
-    while conn.status
-      sleep 1
+    $stderr.puts "started"
+    begin
+      while conn.status
+        sleep 1
+      end
+    rescue Interrupt
+      $stderr.puts "Solr is shutting down."
     end
   end
 end
