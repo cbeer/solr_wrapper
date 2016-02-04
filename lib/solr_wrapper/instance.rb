@@ -45,10 +45,11 @@ module SolrWrapper
 
     ##
     # Start Solr and wait for it to become available
+    # @return [StringIO] output from executing the command
     def start
       extract_and_configure
       if managed?
-        exec('start', p: port, c: options[:cloud])
+        exec_solr('start', p: port, c: options[:cloud])
 
         # Wait for solr to start
         unless status
@@ -59,10 +60,11 @@ module SolrWrapper
 
     ##
     # Stop Solr and wait for it to finish exiting
+    # @return [StringIO] output from executing the command
     def stop
       if managed? && started?
 
-        exec('stop', p: port)
+        exec_solr('stop', p: port)
         # Wait for solr to stop
         while status
           sleep 1
@@ -74,10 +76,21 @@ module SolrWrapper
 
     ##
     # Stop Solr and wait for it to finish exiting
+    # @return [StringIO] output from executing the command
     def restart
       if managed? && started?
-        exec('restart', p: port, c: options[:cloud])
+        exec_solr('restart', p: port, c: options[:cloud])
       end
+    end
+
+    ##
+    # Stop solr and remove the install directory
+    # Warning: This will delete the entire instance_dir
+    # @return [String] path to the instance_dir that was deleted
+    def destroy
+      stop
+      FileUtils.rm_rf instance_dir
+      instance_dir
     end
 
     ##
@@ -85,7 +98,7 @@ module SolrWrapper
     def status
       return true unless managed?
 
-      out = exec('status').read
+      out = exec_solr('status').read
       out =~ /running on port #{port}/
     rescue
       false
@@ -93,32 +106,155 @@ module SolrWrapper
 
     ##
     # Is Solr running?
+    # @return [Boolean] whether solr is running
     def started?
       !!status
     end
 
     ##
-    # Create a new collection in solr
+    # Create a new collection (or core) in solr
+    # @param [String] name of the collection to create (defaults to a generated hex value)
     # @param [Hash] options
-    # @option options [String] :name
     # @option options [String] :dir
-    def create(options = {})
-      options[:name] ||= SecureRandom.hex
-
+    # @return [String] name of the collection created
+    def create(name=nil, options = {})
+      name ||= SecureRandom.hex
       create_options = { p: port }
-      create_options[:c] = options[:name] if options[:name]
+      create_options[:c] = name
       create_options[:d] = options[:dir] if options[:dir]
-      exec("create", create_options)
+      exec_solr("create", create_options)
 
-      options[:name]
+      name
     end
 
     ##
-    # Create a new collection in solr
+    # Delete a collection (or core) from solr
     # @param [String] name collection name
+    # @return [StringIO] output from executing the command
     def delete(name, _options = {})
-      exec("delete", c: name, p: port)
+      exec_solr("delete", c: name, p: port)
     end
+
+    ##
+    # Create or Re-Create a collection (or core) in solr
+    # If you created a collection/core using the default 'create' method
+    # Then it is not possible to 'update' its configs.  You have
+    # to delete it and create again.
+    # Alternatively, if you used upload_collection_config to put the configs
+    # in zookeeper _before_ creating the collection you can use `create_or_reload`
+    # which will refresh the collection without deleting it.
+    # @param [String] name collection name
+    # @option options [String] :dir
+    # @return [String] name of the collection
+    def create_or_update(name, options={})
+      delete(name, options) if collection_exists?(name)
+      create(name, options)
+    end
+
+    # Refresh a collection's configuration or create the collection if it doesn't exist
+    # *This method only works when solr is in cloud mode.*
+    # @param [String] name collection name
+    # @param [Hash] options
+    # @option options [String] :dir path to the new config files you want to upload into zookeeper
+    # @option options [String] :config_name (optional) configname to use in zookeeper (defaults to the collection name)
+    # @return [String] name of the collection
+    def create_or_reload(name, options={})
+      if collection_exists?(name)
+        if options[:dir]
+          confname = options.fetch(:config_name, name)
+          upload_collection_config(confname, options)
+        end
+        reload_collection(name)
+      else
+        create_reloadable_collection(name, options)
+      end
+    end
+
+    # Creates a collection that can be reloaded later
+    # Instead of creating a collection using solr's defaults
+    # Uploads the collection's configuration files to zookeeper
+    # and then creates the collection using that named set of configs.
+    # By default, the zookeeper confname is the same as the collection name
+    # you can override that by setting options[:config_name]
+    # *This method only works when solr is in cloud mode.*
+    # @param [String] name collection name
+    # @param [Hash] options
+    # @option options [String] :dir path to the config files for this collection
+    # @option options [String] :config_name (optional) configname to use in zookeeper (defaults to the collection name)
+    def create_reloadable_collection(name, options={})
+      confname = options.fetch(:config_name, name)
+      upload_collection_config(confname, options)
+      create(name, {n: confname})
+    end
+
+    ##
+    # Tell solr to reload a collection and its configuration
+    # @param [String] name of the collection
+    def reload_collection(name)
+      begin
+        open url + "admin/collections?action=RELOAD&wt=json&name=#{name}"
+      rescue OpenURI::HTTPError => e
+        response_body = e.io.read
+        case response_body
+          when /Solr instance is not running in SolrCloud mode./
+            raise SolrWrapper::NotInCloudModeError, response_body
+          when /Could not find collection/
+            raise SolrWrapper::CollectionNotFoundError, response_body
+          else
+            response_body
+        end
+      end
+    end
+
+    ###
+    # Check whether a collection (or core) exists in solr
+    # @param [String] name collection name
+    def collection_exists?(name)
+      begin
+        # Delete the collection if it exists
+        healthcheck(name)
+        true
+      rescue SolrWrapper::CollectionNotFoundError
+        false
+      end
+    end
+
+    ###
+    # Run solr healthcheck command for a collection (or core)
+    # @param [String] name collection name
+    def healthcheck(name, _options = {})
+      begin
+        exec_solr("healthcheck", c: name, z:"#{host}:#{zkport}")
+      rescue RuntimeError => e
+        case e.message
+          when /ERROR: Collection #{name} not found!/
+            raise SolrWrapper::CollectionNotFoundError, e.message
+          when /Could not connect to ZooKeeper/, /port out of range/, /org.apache.zookeeper.ClientCnxn\$SendThread; Session 0x0 for server null, unexpected error, closing socket connection and attempting reconnect/
+            raise SolrWrapper::ZookeeperNotRunningError, "Zookeeper is not running at #{host}:#{zkport}. Are you sure solr is running in cloud mode?"
+        else
+          raise e
+        end
+      end
+    end
+
+    # Use zookeeper cli script to upload configs into +solr_instance+ and store them as +config_name+
+    # This makes it possible for multiple collections to share configs and allows you to update collection
+    # config files on the fly
+    # @param [String] config_name The confName to use in zookeeper
+    # @option options [String] :dir source directory for configuration. Defaults to "#{SolrWrapper.source_config_dir}/#{collection_name}/conf"
+    # @example Make 2 collections that share the same config, then modify the configs and reload the collecitons
+    #   instance.upload_collection_config('metastore', dir:'myconfigs')
+    #   instance.create('metastore1', config_name:'metastore')
+    #   instance.create('metastore2', config_name:'metastore')
+    #   # upload modified configurations
+    #   instance.upload_collection_config('metastore', dir:'modifiedconfigs')
+    #   instance.reload_collection('metastore1')
+    #   instance.reload_collection('metastore2')
+    def upload_collection_config(config_name, options={})
+      conf_dir = options.fetch(:dir, "#{SolrWrapper.source_config_dir}/#{config_name}/conf")
+      exec_zookeeper('upconfig', confdir: conf_dir, confname: config_name, zkhost: zkhost, solrhome: instance_dir)
+    end
+
 
     ##
     # Create a new collection, run the block, and then clean up the collection
@@ -128,7 +264,7 @@ module SolrWrapper
     def with_collection(options = {})
       return yield if options.empty?
 
-      name = create(options)
+      name = create(options[:name], options)
       begin
         yield name
       ensure
@@ -146,6 +282,15 @@ module SolrWrapper
     # Get the port this Solr instance is running at
     def port
       @port ||= options.fetch(:port, random_open_port).to_s
+    end
+
+    # Full Zookeeper host address - ie. 'localhost:9983'
+    def zkhost
+      "#{host}:#{zkport}"
+    end
+
+    def zkport
+      @zkport ||= (port.to_i + 1000).to_s
     end
 
     ##
@@ -174,7 +319,13 @@ module SolrWrapper
     def configure
       raise_error_unless_extracted
       FileUtils.cp options[:solr_xml], File.join(instance_dir, 'server', 'solr', 'solr.xml') if options[:solr_xml]
-      FileUtils.cp_r File.join(options[:extra_lib_dir], '.'), File.join(instance_dir, 'server', 'solr', 'lib') if options[:extra_lib_dir]
+      if options[:extra_lib_dir]
+        if File.exist?(options[:extra_lib_dir])
+          FileUtils.cp_r File.join(options[:extra_lib_dir], '.'), File.join(instance_dir, 'server', 'solr', 'lib')
+        else
+          puts "You specified #{options[:extra_lib_dir]} as the :extra_lib_dir but that directory does not exist!"
+        end
+      end
     end
 
     def instance_dir
@@ -216,6 +367,7 @@ module SolrWrapper
         FileUtils.cp_r File.join(tmp_save_dir, File.basename(download_url, ".zip")), instance_dir
         self.extracted_version = version
         FileUtils.chmod 0755, solr_binary
+        FileUtils.chmod(0755, zookeeper_cli)
       rescue Exception => e
         abort "Unable to copy #{tmp_save_dir} to #{instance_dir}: #{e.message}"
       end
@@ -252,70 +404,16 @@ module SolrWrapper
       end
     end
 
-    ##
-    # Run a bin/solr command
-    # @param [String] cmd command to run
-    # @param [Hash] options key-value pairs to transform into command line arguments
-    # @return [StringIO] an IO object for the executed shell command
-    # @see https://github.com/apache/lucene-solr/blob/trunk/solr/bin/solr
-    # If you want to pass a boolean flag, include it in the +options+ hash with its value set to +true+
-    # the key will be converted into a boolean flag for you.
-    # @example start solr in cloud mode on port 8983
-    #   exec('start', {p: '8983', c: true})
-    def exec(cmd, options = {})
-      silence_output = !options.delete(:output)
+    def exec_solr(cmd, options={})
+      SolrWrapper::CommandLineWrapper.exec(solr_binary, cmd, solr_options.merge(options), env)
+    end
 
-      args = [solr_binary, cmd] + solr_options.merge(options).map do |k, v|
-        case v
-        when true
-          "-#{k}"
-        when false, nil
-          # don't return anything
-        else
-          ["-#{k}", "#{v}"]
-        end
-      end.flatten.compact
-
-      if IO.respond_to? :popen4
-        # JRuby
-        env_str = env.map { |k, v| "#{Shellwords.escape(k)}=#{Shellwords.escape(v)}" }.join(" ")
-        pid, input, output, error = IO.popen4(env_str + " " + args.join(" "))
-        @pid = pid
-        stringio = StringIO.new
-        if verbose? && !silence_output
-          IO.copy_stream(output, $stderr)
-          IO.copy_stream(error, $stderr)
-        else
-          IO.copy_stream(output, stringio)
-          IO.copy_stream(error, stringio)
-        end
-
-        input.close
-        output.close
-        error.close
-        exit_status = Process.waitpid2(@pid).last
-      else
-        IO.popen(env, args + [err: [:child, :out]]) do |io|
-          stringio = StringIO.new
-
-          if verbose? && !silence_output
-            IO.copy_stream(io, $stderr)
-          else
-            IO.copy_stream(io, stringio)
-          end
-
-          @pid = io.pid
-
-          _, exit_status = Process.wait2(io.pid)
-        end
-      end
-
-      stringio.rewind
-      if exit_status != 0
-        raise "Failed to execute solr #{cmd}: #{stringio.read}"
-      end
-
-      stringio
+    def exec_zookeeper(cmd, options={})
+      # the zookeeper cli expects commands to be identified by -cmd flag instead of
+      # simply using the first argument
+      # ie. `zkcli.sh -cmd bootstrap` instead of `zkcli.sh boostrap`
+      options[:cmd] = cmd
+      SolrWrapper::CommandLineWrapper.exec(zookeeper_cli, nil, solr_options.merge(options), env)
     end
 
     private
@@ -381,6 +479,10 @@ module SolrWrapper
 
     def solr_binary
       File.join(instance_dir, "bin", "solr")
+    end
+
+    def zookeeper_cli
+      File.join(instance_dir, "server","scripts","cloud-scripts","zkcli.sh")
     end
 
     def md5sum_path
