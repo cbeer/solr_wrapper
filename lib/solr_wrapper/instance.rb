@@ -226,6 +226,10 @@ module SolrWrapper
     end
     # rubocop:enable Lint/RescueException
 
+    def version
+      @version ||= options.fetch(:version, SolrWrapper.default_solr_version)
+    end
+
     protected
 
     def extracted?
@@ -335,10 +339,6 @@ module SolrWrapper
 
     def md5url
       "http://www.us.apache.org/dist/lucene/solr/#{version}/solr-#{version}.zip.md5"
-    end
-
-    def version
-      @version ||= options.fetch(:version, SolrWrapper.default_solr_version)
     end
 
     def solr_options
