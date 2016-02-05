@@ -17,7 +17,11 @@ OptionParser.new do |opts|
   end
 
   opts.on("-pPORT", "--port PORT", "Specify the port Solr should run at (default: 8983)") do |p|
-    options[:port] = p
+    if p == 'random'
+      options[:port] = nil
+    else
+      options[:port] = p
+    end
   end
 
   opts.on("-c", "--cloud", "Run solr in cloud mode") do |c|
@@ -46,10 +50,10 @@ end.parse!
 options[:verbose] = true if options[:verbose].nil?
 
 instance = SolrWrapper.default_instance(options)
-$stderr.print "Starting Solr #{instance.version}..."
+$stderr.print "Starting Solr #{instance.version} on port #{instance.port} ... "
 instance.wrap do |conn|
   conn.with_collection(collection_options) do
-    $stderr.puts "started"
+    $stderr.puts "http://#{instance.host}:#{instance.port}/solr/"
     begin
       while conn.status
         sleep 1

@@ -145,7 +145,8 @@ module SolrWrapper
     ##
     # Get the port this Solr instance is running at
     def port
-      @port ||= options.fetch(:port, random_open_port).to_s
+      @port ||= options[:port]
+      @port ||= random_open_port.to_s
     end
 
     ##
