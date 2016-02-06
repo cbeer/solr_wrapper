@@ -326,7 +326,7 @@ module SolrWrapper
     private
 
     def download_url
-      @download_url ||= options.fetch(:url, default_download_url)
+      @download_url ||= options.fetch(:url) { default_download_url }
     end
 
     def default_download_url
