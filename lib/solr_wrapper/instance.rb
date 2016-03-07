@@ -336,6 +336,8 @@ module SolrWrapper
         doc = JSON.parse(json)
         doc['preferred'] + doc['path_info']
       end
+    rescue SocketError
+      "http://www.us.apache.org/dist/lucene/solr/#{version}/solr-#{version}.zip"
     end
 
     def md5url
