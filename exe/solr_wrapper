@@ -27,6 +27,10 @@ OptionParser.new do |opts|
   opts.on("-c", "--cloud", "Run solr in cloud mode") do |c|
     options[:cloud] = c
   end
+  
+  opts.on("-dPATH", "--download_path PATH", "Download/use solr at the given path") do |d|
+    options[:download_path] = d
+  end
 
   opts.on("-iDIR", "--instance_directory DIR", "Install/use solr at the given directory") do |d|
     options[:instance_dir] = d
