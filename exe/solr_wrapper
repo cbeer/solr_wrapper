@@ -32,7 +32,7 @@ OptionParser.new do |opts|
     options[:cloud] = c
   end
   
-  opts.on("-dPATH", "--download_path PATH", "Download/use solr at the given path") do |d|
+  opts.on("--download_path PATH", "Download/use solr at the given path") do |d|
     options[:download_path] = d
   end
 
