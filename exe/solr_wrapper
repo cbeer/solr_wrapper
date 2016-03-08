@@ -48,6 +48,9 @@ OptionParser.new do |opts|
     collection_options[:dir] = d
   end
 
+  opts.on("--no-checksum", "Skip running checksum validation on the downloaded file") do |d|
+    options[:ignore_md5sum] = true
+  end
 end.parse!
 
 # default to verbose
