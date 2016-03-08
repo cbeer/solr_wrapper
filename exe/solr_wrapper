@@ -12,6 +12,10 @@ OptionParser.new do |opts|
     options[:verbose] = v
   end
 
+  opts.on("--config", "Load configuration from a file") do |v|
+    options[:config] = v
+  end
+
   opts.on("--version VERSION", "Specify a Solr version to download (default: #{SolrWrapper.default_solr_version})") do |v|
     options[:version] = v
   end
@@ -26,6 +30,10 @@ OptionParser.new do |opts|
 
   opts.on("-c", "--cloud", "Run solr in cloud mode") do |c|
     options[:cloud] = c
+  end
+  
+  opts.on("-dPATH", "--download_path PATH", "Download/use solr at the given path") do |d|
+    options[:download_path] = d
   end
 
   opts.on("-iDIR", "--instance_directory DIR", "Install/use solr at the given directory") do |d|
@@ -44,10 +52,27 @@ OptionParser.new do |opts|
     collection_options[:dir] = d
   end
 
+  opts.on("--no-checksum", "Skip running checksum validation on the downloaded file") do |d|
+    options[:ignore_md5sum] = true
+  end
 end.parse!
 
 # default to verbose
 options[:verbose] = true if options[:verbose].nil?
+default_configuration_paths = ['.solr_wrapper', '~/.solr_wrapper']
+default_configuration_paths.each do |p|
+  path = File.expand_path('.solr_wrapper')
+  options[:config] ||= path if File.exist? path
+end
+
+if options[:config]
+  require 'erb'
+  require 'yaml'
+  config = YAML.load(ERB.new(IO.read(options[:config])).result(binding))
+  collection_config = config.delete(:collection) || {}
+  options = config.merge(options)
+  collection_options = collection_config.merge(collection_options)
+end
 
 instance = SolrWrapper.default_instance(options)
 $stderr.print "Starting Solr #{instance.version} on port #{instance.port} ... "

@@ -1,11 +1,9 @@
 inherit_from:
-  - .rubocop_hound.yml
   - .rubocop_todo.yml
 
 AllCops:
   Exclude:
   - "*.gemspec"
-  RunRailsCops: true
 
 Metrics/LineLength:
   Enabled: false
