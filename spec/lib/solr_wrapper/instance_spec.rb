@@ -4,8 +4,9 @@ describe SolrWrapper::Instance do
   let(:solr_instance) { SolrWrapper::Instance.new }
   subject { solr_instance }
   let(:client) { SimpleSolrClient::Client.new(subject.url) }
+
   describe "#with_collection" do
-    it "should create a new anonymous collection" do
+    it "creates a new anonymous collection" do
       subject.wrap do |solr|
         solr.with_collection(dir: File.join(FIXTURES_DIR, "basic_configs")) do |collection_name|
           core = client.core(collection_name)
@@ -17,6 +18,7 @@ describe SolrWrapper::Instance do
       end
     end
   end
+
   describe 'exec' do
     let(:cmd) { 'start' }
     let(:options) { { p: '4098', help: true } }
@@ -37,5 +39,30 @@ describe SolrWrapper::Instance do
         expect { subject }.to raise_error(RuntimeError, /Failed to execute solr healthcheck: collection parameter is required!/)
       end
     end
+  end
+
+  describe "#host" do
+    subject { solr_instance.host }
+    it { is_expected.to eq '127.0.0.1' }
+  end
+
+  describe "#port" do
+    subject { solr_instance.port }
+    it { is_expected.to eq '8983' }
+  end
+
+  describe "#url" do
+    subject { solr_instance.url }
+    it { is_expected.to eq 'http://127.0.0.1:8983/solr/' }
+  end
+
+  describe "#version" do
+    subject { solr_instance.version }
+    it { is_expected.to eq '5.4.1' }
+  end
+
+  describe "#md5" do
+    subject { solr_instance.md5 }
+    it { is_expected.to be_instance_of SolrWrapper::MD5 }
   end
 end

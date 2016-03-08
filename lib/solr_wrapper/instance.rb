@@ -8,10 +8,12 @@ require 'socket'
 require 'stringio'
 require 'tmpdir'
 require 'zip'
+require 'erb'
+require 'yaml'
 
 module SolrWrapper
   class Instance
-    attr_reader :options, :pid
+    attr_reader :config, :md5, :pid
 
     ##
     # @param [Hash] options
@@ -31,8 +33,26 @@ module SolrWrapper
     # @option options [Boolean] :ignore_md5sum
     # @option options [Hash] :solr_options
     # @option options [Hash] :env
+    # @option options [String] :config
     def initialize(options = {})
-      @options = options
+      @config = Settings.new(Configuration.new(options))
+      @md5 = MD5.new(@config)
+    end
+
+    def host
+      config.host
+    end
+
+    def port
+      config.port
+    end
+
+    def url
+      config.url
+    end
+
+    def version
+      config.version
     end
 
     def wrap(&_block)
@@ -47,8 +67,8 @@ module SolrWrapper
     # Start Solr and wait for it to become available
     def start
       extract_and_configure
-      if managed?
-        exec('start', p: port, c: options[:cloud])
+      if config.managed?
+        exec('start', p: port, c: config.cloud)
 
         # Wait for solr to start
         unless status
@@ -60,7 +80,7 @@ module SolrWrapper
     ##
     # Stop Solr and wait for it to finish exiting
     def stop
-      if managed? && started?
+      if config.managed? && started?
 
         exec('stop', p: port)
         # Wait for solr to stop
@@ -75,15 +95,15 @@ module SolrWrapper
     ##
     # Stop Solr and wait for it to finish exiting
     def restart
-      if managed? && started?
-        exec('restart', p: port, c: options[:cloud])
+      if config.managed? && started?
+        exec('restart', p: port, c: config.cloud)
       end
     end
 
     ##
     # Check the status of a managed Solr service
     def status
-      return true unless managed?
+      return true unless config.managed?
 
       out = exec('status').read
       out =~ /running on port #{port}/
@@ -137,27 +157,14 @@ module SolrWrapper
     end
 
     ##
-    # Get the host this Solr instance is bound to
-    def host
-      '127.0.0.1'
-    end
-
-    ##
-    # Get the port this Solr instance is running at
-    def port
-      @port ||= options[:port]
-      @port ||= random_open_port.to_s
-    end
-
-    ##
     # Clean up any files solr_wrapper may have downloaded
     def clean!
       stop
       remove_instance_dir!
-      FileUtils.remove_entry(download_path) if File.exists?(download_path)
-      FileUtils.remove_entry(tmp_save_dir, true) if File.exists? tmp_save_dir
-      FileUtils.remove_entry(md5sum_path) if File.exists? md5sum_path
-      FileUtils.remove_entry(version_file) if File.exists? version_file
+      FileUtils.remove_entry(config.download_path) if File.exists?(config.download_path)
+      FileUtils.remove_entry(config.tmp_save_dir, true) if File.exists? config.tmp_save_dir
+      md5.clean!
+      FileUtils.remove_entry(config.version_file) if File.exists? config.version_file
     end
 
     ##
@@ -166,26 +173,14 @@ module SolrWrapper
       FileUtils.remove_entry(instance_dir, true) if File.exists? instance_dir
     end
 
-    ##
-    # Get a (likely) URL to the solr instance
-    def url
-      "http://#{host}:#{port}/solr/"
-    end
-
     def configure
       raise_error_unless_extracted
-      FileUtils.cp options[:solr_xml], File.join(instance_dir, 'server', 'solr', 'solr.xml') if options[:solr_xml]
-      FileUtils.cp_r File.join(options[:extra_lib_dir], '.'), File.join(instance_dir, 'server', 'solr', 'lib') if options[:extra_lib_dir]
-    end
-
-    def instance_dir
-      @instance_dir ||= options.fetch(:instance_dir, File.join(Dir.tmpdir, File.basename(download_url, ".zip")))
+      FileUtils.cp config.solr_xml, File.join(config.instance_dir, 'server', 'solr', 'solr.xml') if config.solr_xml
+      FileUtils.cp_r File.join(config.extra_lib_dir, '.'), File.join(config.instance_dir, 'server', 'solr', 'lib') if config.extra_lib_dir
     end
 
     def extract_and_configure
-      instance_dir = extract
-      configure
-      instance_dir
+      extract.tap { configure }
     end
 
     # rubocop:disable Lint/RescueException
@@ -194,7 +189,7 @@ module SolrWrapper
     # Does noting if solr already exists at instance_dir
     # @return [String] instance_dir Directory where solr has been installed
     def extract
-      return instance_dir if extracted?
+      return config.instance_dir if extracted?
 
       zip_path = download
 
@@ -202,59 +197,43 @@ module SolrWrapper
         Zip::File.open(zip_path) do |zip_file|
           # Handle entries one by one
           zip_file.each do |entry|
-            dest_file = File.join(tmp_save_dir, entry.name)
+            dest_file = File.join(config.tmp_save_dir, entry.name)
             FileUtils.remove_entry(dest_file, true)
             entry.extract(dest_file)
           end
         end
 
       rescue Exception => e
-        abort "Unable to unzip #{zip_path} into #{tmp_save_dir}: #{e.message}"
+        abort "Unable to unzip #{zip_path} into #{config.tmp_save_dir}: #{e.message}"
       end
 
       begin
-        FileUtils.remove_dir(instance_dir, true)
-        FileUtils.cp_r File.join(tmp_save_dir, File.basename(download_url, ".zip")), instance_dir
-        self.extracted_version = version
-        FileUtils.chmod 0755, solr_binary
+        FileUtils.remove_dir(config.instance_dir, true)
+        FileUtils.cp_r File.join(config.tmp_save_dir, File.basename(config.download_url, ".zip")), config.instance_dir
+        self.extracted_version = config.version
+        FileUtils.chmod 0755, config.solr_binary
       rescue Exception => e
-        abort "Unable to copy #{tmp_save_dir} to #{instance_dir}: #{e.message}"
+        abort "Unable to copy #{config.tmp_save_dir} to #{config.instance_dir}: #{e.message}"
       end
 
-      instance_dir
+      config.instance_dir
     ensure
-      FileUtils.remove_entry tmp_save_dir if File.exists? tmp_save_dir
+      FileUtils.remove_entry config.tmp_save_dir if File.exists? config.tmp_save_dir
     end
     # rubocop:enable Lint/RescueException
-
-    def version
-      @version ||= options.fetch(:version, SolrWrapper.default_solr_version)
-    end
 
     protected
 
     def extracted?
-      File.exists?(solr_binary) && extracted_version == version
+      File.exists?(config.solr_binary) && extracted_version == config.version
     end
 
     def download
-      unless File.exists?(download_path) && validate?(download_path)
-        fetch_with_progressbar download_url, download_path
-        validate! download_path
+      unless File.exists?(config.download_path) && md5.validate?(config.download_path)
+        Downloader.fetch_with_progressbar config.download_url, config.download_path
+        md5.validate! config.download_path
       end
-      download_path
-    end
-
-    def validate?(file)
-      return true if options[:validate] == false
-
-      Digest::MD5.file(file).hexdigest == expected_md5sum
-    end
-
-    def validate!(file)
-      unless validate? file
-        raise "MD5 mismatch" unless options[:ignore_md5sum]
-      end
+      config.download_path
     end
 
     ##
@@ -270,7 +249,7 @@ module SolrWrapper
     def exec(cmd, options = {})
       silence_output = !options.delete(:output)
 
-      args = [solr_binary, cmd] + solr_options.merge(options).map do |k, v|
+      args = [config.solr_binary, cmd] + config.solr_options.merge(options).map do |k, v|
         case v
         when true
           "-#{k}"
@@ -283,11 +262,11 @@ module SolrWrapper
 
       if IO.respond_to? :popen4
         # JRuby
-        env_str = env.map { |k, v| "#{Shellwords.escape(k)}=#{Shellwords.escape(v)}" }.join(" ")
+        env_str = config.env.map { |k, v| "#{Shellwords.escape(k)}=#{Shellwords.escape(v)}" }.join(" ")
         pid, input, output, error = IO.popen4(env_str + " " + args.join(" "))
         @pid = pid
         stringio = StringIO.new
-        if verbose? && !silence_output
+        if config.verbose? && !silence_output
           IO.copy_stream(output, $stderr)
           IO.copy_stream(error, $stderr)
         else
@@ -300,10 +279,10 @@ module SolrWrapper
         error.close
         exit_status = Process.waitpid2(@pid).last
       else
-        IO.popen(env, args + [err: [:child, :out]]) do |io|
+        IO.popen(config.env, args + [err: [:child, :out]]) do |io|
           stringio = StringIO.new
 
-          if verbose? && !silence_output
+          if config.verbose? && !silence_output
             IO.copy_stream(io, $stderr)
           else
             IO.copy_stream(io, stringio)
@@ -325,119 +304,18 @@ module SolrWrapper
 
     private
 
-    def download_url
-      @download_url ||= options.fetch(:url) { default_download_url }
-    end
-
-    def default_download_url
-      @default_url ||= begin
-        mirror_url = "http://www.apache.org/dyn/closer.lua/lucene/solr/#{version}/solr-#{version}.zip?asjson=true"
-        json = open(mirror_url).read
-        doc = JSON.parse(json)
-        doc['preferred'] + doc['path_info']
-      end
-    rescue SocketError
-      "http://www.us.apache.org/dist/lucene/solr/#{version}/solr-#{version}.zip"
-    end
-
-    def md5url
-      "http://www.us.apache.org/dist/lucene/solr/#{version}/solr-#{version}.zip.md5"
-    end
-
-    def solr_options
-      options.fetch(:solr_options, {})
-    end
-
-    def env
-      options.fetch(:env, {})
-    end
-
-    def download_path
-      @download_path ||= options.fetch(:download_path, default_download_path)
-    end
-
-    def default_download_path
-      File.join(download_dir, File.basename(download_url))
-    end
-
-    def download_dir
-      @download_dir ||= options.fetch(:download_dir, Dir.tmpdir)
-      FileUtils.mkdir_p @download_dir
-      @download_dir
-    end
-
-    def verbose?
-      !!options.fetch(:verbose, false)
-    end
-
-    def managed?
-      File.exists?(instance_dir)
-    end
-
-    def version_file
-      options.fetch(:version_file, File.join(instance_dir, "VERSION"))
-    end
-
-    def expected_md5sum
-      @md5sum ||= options.fetch(:md5sum, open(md5file).read.split(" ").first)
-    end
-
-    def solr_binary
-      File.join(instance_dir, "bin", "solr")
-    end
-
-    def md5sum_path
-      File.join(download_dir, File.basename(md5url))
-    end
-
-    def tmp_save_dir
-      @tmp_save_dir ||= Dir.mktmpdir
-    end
-
-    def fetch_with_progressbar(url, output)
-      pbar = ProgressBar.create(title: File.basename(url), total: nil, format: "%t: |%B| %p%% (%e )")
-      open(url, content_length_proc: lambda do|t|
-        if t && 0 < t
-          pbar.total = t
-        end
-      end,
-                progress_proc: lambda do|s|
-                  pbar.progress = s
-                end) do |io|
-        IO.copy_stream(io, output)
-      end
-    end
-
-    def md5file
-      unless File.exists? md5sum_path
-        fetch_with_progressbar md5url, md5sum_path
-      end
-
-      md5sum_path
-    end
-
     def extracted_version
-      File.read(version_file).strip if File.exists? version_file
+      File.read(config.version_file).strip if File.exists? config.version_file
     end
 
     def extracted_version=(version)
-      File.open(version_file, "w") do |f|
+      File.open(config.version_file, "w") do |f|
         f.puts version
       end
     end
 
-    def random_open_port
-      socket = Socket.new(:INET, :STREAM, 0)
-      begin
-        socket.bind(Addrinfo.tcp('127.0.0.1', 0))
-        socket.local_address.ip_port
-      ensure
-        socket.close
-      end
-    end
-
     def raise_error_unless_extracted
-      raise RuntimeError, "there is no solr instance at #{instance_dir}.  Run SolrWrapper.extract first." unless extracted?
+      raise RuntimeError, "there is no solr instance at #{config.instance_dir}.  Run SolrWrapper.extract first." unless extracted?
     end
   end
 end
