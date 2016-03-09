@@ -2,6 +2,8 @@ require 'solr_wrapper/version'
 require 'solr_wrapper/instance'
 
 module SolrWrapper
+  class CollectionNotFoundError < RuntimeError ; end
+  class ZookeeperNotRunning < RuntimeError ; end
   def self.default_solr_version
     '5.4.1'
   end
