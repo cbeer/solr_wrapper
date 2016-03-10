@@ -21,4 +21,15 @@ describe SolrWrapper::Configuration do
       it { is_expected.to eq '8888' }
     end
   end
+
+  describe "#read_config" do
+    before do
+      allow(config).to receive(:default_configuration_paths).and_return([])
+    end
+    let(:options) { { config: 'spec/fixtures/sample_config.yml' } }
+    it "uses values from the config file" do
+      expect(config.port).to eq '9999'
+    end
+
+  end
 end

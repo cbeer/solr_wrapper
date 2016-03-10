@@ -3,8 +3,8 @@ module SolrWrapper
     attr_reader :options
 
     def initialize(options)
-      @options = options
-      read_config
+      @options = read_config(options[:config], options[:verbose])
+             .merge options
     end
 
     def solr_xml
@@ -80,25 +80,28 @@ module SolrWrapper
 
     private
 
-      def read_config
-        default_configuration_paths = ['.solr_wrapper', '~/.solr_wrapper']
+      def read_config(config_file, verbose)
         default_configuration_paths.each do |p|
           path = File.expand_path(p)
-          options[:config] ||= path if File.exist? path
+          config_file ||= path if File.exist? path
         end
 
-        if options[:config]
-          $stdout.puts "Loading configuration from #{options[:config]}" if verbose?
-          config = YAML.load(ERB.new(IO.read(options[:config])).result(binding))
-          unless config
-            $stderr.puts "Unable to parse config #{options[:config]}" if verbose?
-            return
-          end
-          collection_config = config.delete(:collection) || {}
-          @options = config.merge(options)
-        elsif verbose?
-          $stdout.puts "No config specified"
+        unless config_file
+          $stdout.puts "No config specified" if verbose
+          return {}
         end
+
+        $stdout.puts "Loading configuration from #{config_file}" if verbose
+        config = YAML.load(ERB.new(IO.read(config_file)).result(binding))
+        unless config
+          $stderr.puts "Unable to parse config #{config_file}" if verbose
+          return {}
+        end
+        config.each_with_object({}) { |(k, v), h| h[k.to_sym] = v.to_s }
+      end
+
+      def default_configuration_paths
+        ['.solr_wrapper', '~/.solr_wrapper']
       end
   end
 end
