@@ -32,6 +32,21 @@ namespace :solr do
     end
   end
 
+  desc 'Create a collection in solr'
+  task create: :start do
+    start = ARGV.find_index('solr:create')
+    if ARGV.length >= start + 2
+      directory = ARGV[start + 1]
+      name      = ARGV[start + 2]
+      # Rake tries to run these as tasks.
+      task(directory.to_sym) {}
+      task(name.to_sym) {}
+      @solr_instance.create dir: directory, name: name
+    else
+      raise "Usage: rake solr:create <directory> <name>"
+    end
+  end
+
   desc 'restart solr'
   task restart: :environment do
     puts "Restarting solr"
