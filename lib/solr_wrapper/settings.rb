@@ -1,3 +1,5 @@
+require 'delegate'
+
 module SolrWrapper
   # Configuraton that comes from static and dynamic sources.
   class Settings < Delegator
