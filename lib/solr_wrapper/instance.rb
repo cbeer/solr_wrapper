@@ -146,6 +146,7 @@ module SolrWrapper
     # @option options [String] :name
     # @option options [String] :dir
     def with_collection(options = {})
+      options = config.collection_options.merge(options)
       return yield if options.empty?
 
       name = create(options)
