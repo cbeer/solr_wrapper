@@ -35,7 +35,7 @@ module SolrWrapper
       # Check if the port option has been explicitly set to nil.
       # this means to start solr wrapper on a random open port
       return nil if options.key?(:port) && !options[:port]
-      options[:port] || SolrWrapper.default_instance_options[:port]
+      options.fetch(:port) { SolrWrapper.default_instance_options[:port] }.to_s
     end
 
     def download_path
@@ -78,7 +78,16 @@ module SolrWrapper
       options[:version_file]
     end
 
+    def collection_options
+      hash = options.fetch(:collection, {})
+      Configuration.slice(convert_keys(hash), :name, :dir)
+    end
+
     private
+
+      def self.slice(source, *keys)
+        keys.each_with_object({}) { |k, hash| hash[k] = source[k] if source.has_key?(k) }
+      end
 
       def read_config(config_file, verbose)
         default_configuration_paths.each do |p|
@@ -97,7 +106,11 @@ module SolrWrapper
           $stderr.puts "Unable to parse config #{config_file}" if verbose
           return {}
         end
-        config.each_with_object({}) { |(k, v), h| h[k.to_sym] = v.to_s }
+        convert_keys(config)
+      end
+
+      def convert_keys(hash)
+        hash.each_with_object({}) { |(k, v), h| h[k.to_sym] = v }
       end
 
       def default_configuration_paths

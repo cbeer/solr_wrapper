@@ -30,6 +30,15 @@ describe SolrWrapper::Configuration do
     it "uses values from the config file" do
       expect(config.port).to eq '9999'
     end
+  end
 
+  describe "#collection_options" do
+    before do
+      allow(config).to receive(:default_configuration_paths).and_return([])
+    end
+    let(:options) { { config: 'spec/fixtures/sample_config.yml' } }
+    it "uses values from the config file" do
+      expect(config.collection_options).to eq(name: 'project-development', dir: 'solr/config/')
+    end
   end
 end
