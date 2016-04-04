@@ -7,7 +7,7 @@ require 'solr_wrapper/instance'
 
 module SolrWrapper
   def self.default_solr_version
-    '5.4.1'
+    '5.5.0'
   end
 
   def self.default_instance_options
