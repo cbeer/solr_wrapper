@@ -73,7 +73,7 @@ describe SolrWrapper::Instance do
 
   describe "#version" do
     subject { solr_instance.version }
-    it { is_expected.to eq '5.4.1' }
+    it { is_expected.to eq '6.0.0' }
   end
 
   describe "#md5" do
