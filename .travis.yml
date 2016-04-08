@@ -7,3 +7,6 @@ rvm:
 cache:
   directories:
   - /tmp/solr-5.4.1
+
+jdk:
+  - oraclejdk8
