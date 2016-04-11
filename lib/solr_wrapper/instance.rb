@@ -50,6 +50,10 @@ module SolrWrapper
       config.url
     end
 
+    def instance_dir
+      config.instance_dir
+    end
+
     def version
       config.version
     end

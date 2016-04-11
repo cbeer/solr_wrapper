@@ -71,6 +71,11 @@ describe SolrWrapper::Instance do
     it { is_expected.to eq 'http://127.0.0.1:8983/solr/' }
   end
 
+  describe "#instance_dir" do
+    subject { solr_instance.instance_dir }
+    it { is_expected.to start_with Dir.tmpdir }
+  end
+
   describe "#version" do
     subject { solr_instance.version }
     it { is_expected.to eq '6.0.0' }
