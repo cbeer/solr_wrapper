@@ -20,7 +20,7 @@ OptionParser.new do |opts|
     options[:version] = v
   end
 
-  opts.on("-pPORT", "--port PORT", "Specify the port Solr should run at (default: 8983)") do |p|
+  opts.on("-pPORT", "--port PORT", "Specify the port Solr should run at (default: #{SolrWrapper.default_solr_port})") do |p|
     if p == 'random'
       options[:port] = nil
     else

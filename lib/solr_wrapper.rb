@@ -10,9 +10,13 @@ module SolrWrapper
     '6.0.0'
   end
 
+  def self.default_solr_port
+    '8983'
+  end
+
   def self.default_instance_options
     @default_instance_options ||= {
-      port: '8983',
+      port: SolrWrapper.default_solr_port,
       version: SolrWrapper.default_solr_version
     }
   end
