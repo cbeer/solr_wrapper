@@ -22,12 +22,16 @@ module SolrWrapper
   end
 
   def self.default_instance(options = {})
-    @default_instance ||= SolrWrapper::Instance.new options
+    @default_instance ||= instance(default_instance_options)
+  end
+
+  def self.instance(options)
+    SolrWrapper::Instance.new(options)
   end
 
   ##
   # Ensures a Solr service is running before executing the block
   def self.wrap(options = {}, &block)
-    default_instance(options).wrap &block
+    instance(options).wrap &block
   end
 end

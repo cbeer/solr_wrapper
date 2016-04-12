@@ -60,7 +60,7 @@ end.parse!
 # default to verbose
 options[:verbose] = true if options[:verbose].nil?
 
-instance = SolrWrapper.default_instance(options)
+instance = SolrWrapper.instance(options)
 $stderr.print "Starting Solr #{instance.version} on port #{instance.port} ... "
 instance.wrap do |conn|
   conn.with_collection(collection_options) do

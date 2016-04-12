@@ -4,7 +4,7 @@ require 'solr_wrapper'
 namespace :solr do
   desc "Load the solr options and solr instance"
   task :environment do
-    @solr_instance = SolrWrapper.default_instance
+    @solr_instance = SolrWrapper.instance
   end
 
   desc 'Install a clean version of solr. Replaces the existing copy if there is one.'
