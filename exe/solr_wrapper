@@ -5,7 +5,7 @@ require 'optparse'
 
 options = {}
 collection_options = {}
-OptionParser.new do |opts|
+args = OptionParser.new do |opts|
   opts.banner = "Usage: solr_wrapper [options]"
 
   opts.on("-v", "--[no-]verbose", "Run verbosely") do |v|
@@ -55,7 +55,15 @@ OptionParser.new do |opts|
   opts.on("--no-checksum", "Skip running checksum validation on the downloaded file") do |d|
     options[:ignore_md5sum] = true
   end
-end.parse!
+end
+
+begin
+  args.parse!
+rescue => error
+  $stderr.puts "ERROR: #{error}\n"
+  $stderr.puts args.help
+  exit 1
+end
 
 # default to verbose
 options[:verbose] = true if options[:verbose].nil?
