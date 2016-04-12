@@ -85,7 +85,6 @@ module SolrWrapper
 
       def download_dir
         @download_dir ||= static_config.download_dir
-        @download_dir ||= Dir.tmpdir
         FileUtils.mkdir_p @download_dir
         @download_dir
       end

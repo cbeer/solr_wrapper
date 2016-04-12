@@ -5,14 +5,14 @@ require 'optparse'
 
 options = {}
 collection_options = {}
-OptionParser.new do |opts|
+args = OptionParser.new do |opts|
   opts.banner = "Usage: solr_wrapper [options]"
 
   opts.on("-v", "--[no-]verbose", "Run verbosely") do |v|
     options[:verbose] = v
   end
 
-  opts.on("--config", "Load configuration from a file") do |v|
+  opts.on("--config FILE", "Load configuration from a file") do |v|
     options[:config] = v
   end
 
@@ -20,7 +20,7 @@ OptionParser.new do |opts|
     options[:version] = v
   end
 
-  opts.on("-pPORT", "--port PORT", "Specify the port Solr should run at (default: 8983)") do |p|
+  opts.on("-pPORT", "--port PORT", "Specify the port Solr should run at (default: #{SolrWrapper.default_solr_port})") do |p|
     if p == 'random'
       options[:port] = nil
     else
@@ -55,12 +55,20 @@ OptionParser.new do |opts|
   opts.on("--no-checksum", "Skip running checksum validation on the downloaded file") do |d|
     options[:ignore_md5sum] = true
   end
-end.parse!
+end
+
+begin
+  args.parse!
+rescue => error
+  $stderr.puts "ERROR: #{error}\n"
+  $stderr.puts args.help
+  exit 1
+end
 
 # default to verbose
 options[:verbose] = true if options[:verbose].nil?
 
-instance = SolrWrapper.default_instance(options)
+instance = SolrWrapper.instance(options)
 $stderr.print "Starting Solr #{instance.version} on port #{instance.port} ... "
 instance.wrap do |conn|
   conn.with_collection(collection_options) do

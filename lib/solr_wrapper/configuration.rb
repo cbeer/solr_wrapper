@@ -43,7 +43,15 @@ module SolrWrapper
     end
 
     def download_dir
-      options[:download_dir]
+      options[:download_dir] || default_download_dir
+    end
+
+    def default_download_dir
+      if defined? Rails
+        File.join(Rails.root, 'tmp')
+      else
+        Dir.tmpdir
+      end
     end
 
     def solr_options

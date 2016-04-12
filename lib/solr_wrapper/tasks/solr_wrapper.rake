@@ -4,8 +4,7 @@ require 'solr_wrapper'
 namespace :solr do
   desc "Load the solr options and solr instance"
   task :environment do
-    SolrWrapper.default_instance_options[:download_dir] ||= Rails.root.to_s + '/tmp' if defined? Rails
-    @solr_instance = SolrWrapper.default_instance
+    @solr_instance = SolrWrapper.instance
   end
 
   desc 'Install a clean version of solr. Replaces the existing copy if there is one.'

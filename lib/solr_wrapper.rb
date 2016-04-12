@@ -10,9 +10,13 @@ module SolrWrapper
     '6.0.0'
   end
 
+  def self.default_solr_port
+    '8983'
+  end
+
   def self.default_instance_options
     @default_instance_options ||= {
-      port: '8983',
+      port: SolrWrapper.default_solr_port,
       version: SolrWrapper.default_solr_version
     }
   end
@@ -22,12 +26,16 @@ module SolrWrapper
   end
 
   def self.default_instance(options = {})
-    @default_instance ||= SolrWrapper::Instance.new options
+    @default_instance ||= instance(default_instance_options)
+  end
+
+  def self.instance(options)
+    SolrWrapper::Instance.new(options)
   end
 
   ##
   # Ensures a Solr service is running before executing the block
   def self.wrap(options = {}, &block)
-    default_instance(options).wrap &block
+    instance(options).wrap &block
   end
 end
