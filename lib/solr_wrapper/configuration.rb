@@ -38,6 +38,14 @@ module SolrWrapper
       options.fetch(:port) { SolrWrapper.default_instance_options[:port] }.to_s
     end
 
+    def zookeeper_host
+      options[:zookeeper_host]
+    end
+
+    def zookeeper_port
+      options[:zookeeper_port]
+    end
+
     def download_path
       options[:download_path]
     end

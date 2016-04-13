@@ -130,8 +130,45 @@ module SolrWrapper
 
       create_options = { p: port }
       create_options[:c] = options[:name] if options[:name]
+      create_options[:n] = options[:config_name] if options[:config_name]
       create_options[:d] = options[:dir] if options[:dir]
       exec("create", create_options)
+
+      options[:name]
+    end
+
+    ##
+    # Update the collection configuration in zookeeper
+    # @param [Hash] options
+    # @option options [String] :config_name
+    # @option options [String] :dir
+    def upconfig(options = {})
+      options[:name] ||= SecureRandom.hex
+      options[:zkhost] ||= zkhost
+
+      upconfig_options = { upconfig: true, n: options[:name] }
+      upconfig_options[:d] = options[:dir] if options[:dir]
+      upconfig_options[:z] = options[:zkhost] if options[:zkhost]
+
+      exec 'zk', upconfig_options
+
+      options[:name]
+    end
+
+    ##
+    # Copy the collection configuration from zookeeper to a local directory
+    # @param [Hash] options
+    # @option options [String] :config_name
+    # @option options [String] :dir
+    def downconfig(options = {})
+      options[:name] ||= SecureRandom.hex
+      options[:zkhost] ||= zkhost
+
+      downconfig_options = { downconfig: true, n: options[:name] }
+      downconfig_options[:d] = options[:dir] if options[:dir]
+      downconfig_options[:z] = options[:zkhost] if options[:zkhost]
+
+      exec 'zk', downconfig_options
 
       options[:name]
     end
@@ -316,6 +353,10 @@ module SolrWrapper
       File.open(config.version_file, "w") do |f|
         f.puts version
       end
+    end
+
+    def zkhost
+      "#{config.zookeeper_host}:#{config.zookeeper_port}" if config.cloud
     end
 
     def raise_error_unless_extracted

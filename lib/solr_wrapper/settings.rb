@@ -25,12 +25,23 @@ module SolrWrapper
       '127.0.0.1'
     end
 
+    def zookeeper_host
+      @zookeeper_host ||= static_config.zookeeper_port
+      @zookeeper_host ||= host
+    end
+
     ##
     # Get the port this Solr instance is running at
     def port
       @port ||= static_config.port
       @port ||= random_open_port.to_s
     end
+
+    def zookeeper_port
+      @zookeeper_port ||= static_config.zookeeper_port
+      @zookeeper_port ||= "#{port.to_i + 1000}"
+    end
+
 
     ##
     # Get a (likely) URL to the solr instance
