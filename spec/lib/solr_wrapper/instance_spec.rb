@@ -1,7 +1,8 @@
 require 'spec_helper'
 
 describe SolrWrapper::Instance do
-  let(:solr_instance) { SolrWrapper::Instance.new }
+  let(:options) { {} }
+  let(:solr_instance) { SolrWrapper::Instance.new(options) }
   subject { solr_instance }
   let(:client) { SimpleSolrClient::Client.new(subject.url) }
 
@@ -30,6 +31,24 @@ describe SolrWrapper::Instance do
         expect(solr_instance).to receive(:create).with(
           hash_including(name: "project-development", dir: anything))
         solr_instance.with_collection(dir: File.join(FIXTURES_DIR, "basic_configs")) {}
+      end
+    end
+  end
+
+  context 'with a SolrCloud instance' do
+    let(:options) { { cloud: true } }
+    it 'can upload configurations' do
+      subject.wrap do |solr|
+        config_name = solr.upconfig dir: File.join(FIXTURES_DIR, 'basic_configs')
+        Dir.mktmpdir do |dir|
+          solr.downconfig name: config_name, dir: dir
+        end
+        solr.with_collection(config_name: config_name) do |collection_name|
+          core = client.core(collection_name)
+          unless defined? JRUBY_VERSION
+            expect(core.all.size).to eq 0
+          end
+        end
       end
     end
   end
