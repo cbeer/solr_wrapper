@@ -13,6 +13,14 @@ describe SolrWrapper do
     end
   end
 
+  describe '.instance' do
+    context 'without arguments' do
+      it 'inherits the defaults' do
+        expect(SolrWrapper.instance.port).to eq '8983'
+      end
+    end
+  end
+
   describe ".default_instance_options=" do
     it "sets default options" do
       SolrWrapper.default_instance_options = { port: '1234' }

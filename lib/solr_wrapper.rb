@@ -29,7 +29,7 @@ module SolrWrapper
     @default_instance ||= instance(default_instance_options)
   end
 
-  def self.instance(options)
+  def self.instance(options = {})
     SolrWrapper::Instance.new(options)
   end
 
