@@ -74,9 +74,7 @@ instance.wrap do |conn|
   conn.with_collection(collection_options) do
     $stderr.puts "http://#{instance.host}:#{instance.port}/solr/"
     begin
-      while conn.status
-        sleep 1
-      end
+      conn.wait
     rescue Interrupt
       $stderr.puts "Solr is shutting down."
     end

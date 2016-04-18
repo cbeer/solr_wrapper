@@ -12,7 +12,7 @@ require 'yaml'
 
 module SolrWrapper
   class Instance
-    attr_reader :config, :md5, :pid
+    attr_reader :config, :md5
 
     ##
     # @param [Hash] options
@@ -75,7 +75,7 @@ module SolrWrapper
 
         # Wait for solr to start
         unless status
-          sleep 1
+          sleep config.poll_interval
         end
       end
     end
@@ -84,15 +84,9 @@ module SolrWrapper
     # Stop Solr and wait for it to finish exiting
     def stop
       if config.managed? && started?
-
         exec('stop', p: port)
-        # Wait for solr to stop
-        while status
-          sleep 1
-        end
+        wait
       end
-
-      @pid = nil
     end
 
     ##
@@ -114,10 +108,29 @@ module SolrWrapper
       false
     end
 
+    def pid
+      return unless config.managed?
+
+      @pid ||= begin
+        out = exec('status').read
+        out.match(/process (?<pid>\d+) running on port #{port}/) do |m|
+          m[:pid].to_i
+        end
+      end
+    rescue
+      nil
+    end
+
     ##
     # Is Solr running?
     def started?
       !!status
+    end
+
+    def wait
+      while (Process.getpgid(pid) rescue status)
+        sleep config.poll_interval
+      end
     end
 
     ##
@@ -305,7 +318,6 @@ module SolrWrapper
         # JRuby
         env_str = config.env.map { |k, v| "#{Shellwords.escape(k)}=#{Shellwords.escape(v)}" }.join(" ")
         pid, input, output, error = IO.popen4(env_str + " " + args.join(" "))
-        @pid = pid
         stringio = StringIO.new
         if config.verbose? && !silence_output
           IO.copy_stream(output, $stderr)
@@ -318,7 +330,7 @@ module SolrWrapper
         input.close
         output.close
         error.close
-        exit_status = Process.waitpid2(@pid).last
+        exit_status = Process.waitpid2(pid).last
       else
         IO.popen(config.env, args + [err: [:child, :out]]) do |io|
           stringio = StringIO.new
@@ -328,8 +340,6 @@ module SolrWrapper
           else
             IO.copy_stream(io, stringio)
           end
-
-          @pid = io.pid
 
           _, exit_status = Process.wait2(io.pid)
         end
