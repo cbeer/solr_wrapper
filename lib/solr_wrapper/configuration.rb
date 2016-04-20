@@ -99,6 +99,10 @@ module SolrWrapper
       Configuration.slice(convert_keys(hash), :name, :dir)
     end
 
+    def poll_interval
+      options.fetch(:poll_interval, 1)
+    end
+
     private
 
       def self.slice(source, *keys)
