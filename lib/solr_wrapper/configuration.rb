@@ -99,6 +99,11 @@ module SolrWrapper
       Configuration.slice(convert_keys(hash), :name, :dir)
     end
 
+    def configsets
+      configsets = options[:configsets] || []
+      configsets.map { |x| convert_keys(x) }
+    end
+
     def poll_interval
       options.fetch(:poll_interval, 1)
     end

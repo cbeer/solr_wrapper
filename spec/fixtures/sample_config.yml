@@ -2,3 +2,6 @@ port: 9999
 collection:
   dir: solr/config/
   name: project-development
+configsets:
+  - dir: solr/config/
+    name: project-development-configset
