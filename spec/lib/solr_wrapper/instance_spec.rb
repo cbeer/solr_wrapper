@@ -7,6 +7,7 @@ describe SolrWrapper::Instance do
   let(:client) { SimpleSolrClient::Client.new(subject.url) }
 
   describe "#with_collection" do
+    let(:options) { { cloud: false } }
     context "without a name" do
       it "creates a new anonymous collection" do
         subject.wrap do |solr|
@@ -48,6 +49,22 @@ describe SolrWrapper::Instance do
           unless defined? JRUBY_VERSION
             expect(core.all.size).to eq 0
           end
+        end
+      end
+    end
+
+    context 'with a config file' do
+      before do
+        allow(solr_instance.config).to receive(:configsets)
+          .and_return([name: 'project-development', dir: 'solr/config/'])
+      end
+
+      it 'creates a new configsets with options from the config' do
+        expect(subject).to receive(:upconfig).with(
+          hash_including(name: 'project-development', dir: anything))
+
+        subject.wrap do
+          # no-op
         end
       end
     end

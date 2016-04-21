@@ -77,6 +77,8 @@ module SolrWrapper
         unless status
           sleep config.poll_interval
         end
+
+        after_start
       end
     end
 
@@ -354,6 +356,16 @@ module SolrWrapper
     end
 
     private
+
+    def after_start
+      create_configsets if config.cloud
+    end
+
+    def create_configsets
+      config.configsets.each do |configset|
+        upconfig(configset)
+      end
+    end
 
     def extracted_version
       File.read(config.version_file).strip if File.exists? config.version_file
