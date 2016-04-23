@@ -22,8 +22,8 @@ module SolrWrapper
     # @option options [String] :port port to run Solr on
     # @option options [Boolean] :cloud Run solr in cloud mode
     # @option options [String] :version_file Local path to store the currently installed version
-    # @option options [String] :download_dir Local directory to store the downloaded Solr zip and its md5 file in (overridden by :download_path)
-    # @option options [String] :download_path Local path for storing the downloaded Solr zip file
+    # @option options [String] :download_dir Local directory to store the downloaded Solr zip and its md5 file in (overridden by :solr_zip_path)
+    # @option options [String] :solr_zip_path Local path for storing the downloaded Solr zip file
     # @option options [Boolean] :validate Should solr_wrapper download a new md5 and (re-)validate the zip file? (default: trueF)
     # @option options [String] :md5sum Path/URL to MD5 checksum
     # @option options [String] :solr_xml Path to Solr configuration
@@ -217,7 +217,7 @@ module SolrWrapper
     def clean!
       stop
       remove_instance_dir!
-      FileUtils.remove_entry(config.download_path) if File.exists?(config.download_path)
+      FileUtils.remove_entry(config.download_dir, true) if File.exists?(config.download_dir)
       FileUtils.remove_entry(config.tmp_save_dir, true) if File.exists? config.tmp_save_dir
       md5.clean!
       FileUtils.remove_entry(config.version_file) if File.exists? config.version_file
@@ -285,11 +285,11 @@ module SolrWrapper
     end
 
     def download
-      unless File.exists?(config.download_path) && md5.validate?(config.download_path)
-        Downloader.fetch_with_progressbar config.download_url, config.download_path
-        md5.validate! config.download_path
+      unless File.exists?(config.solr_zip_path) && md5.validate?(config.solr_zip_path)
+        Downloader.fetch_with_progressbar config.download_url, config.solr_zip_path
+        md5.validate! config.solr_zip_path
       end
-      config.download_path
+      config.solr_zip_path
     end
 
     ##

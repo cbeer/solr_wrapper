@@ -35,7 +35,8 @@ Options:
 | version       | Solr version to download and install |
 | port          | port to run Solr on |
 | version_file  | Local path to store the currently installed version |
-| download_path | Local path for storing the downloaded Solr zip file |
+| download_dir  | Local path for storing the downloaded Solr zip file |
+| solr_zip_path | Local path to the Solr zip file |
 | md5sum        | Path/URL to MD5 checksum |
 | solr_xml      | Path to Solr configuration |
 | verbose       | (Boolean) |

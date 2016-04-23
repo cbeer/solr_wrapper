@@ -46,8 +46,8 @@ module SolrWrapper
       options[:zookeeper_port]
     end
 
-    def download_path
-      options[:download_path]
+    def solr_zip_path
+      options[:solr_zip_path]
     end
 
     def download_dir
