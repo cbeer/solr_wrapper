@@ -4,7 +4,7 @@ require 'solr_wrapper'
 namespace :solr do
   desc "Load the solr options and solr instance"
   task :environment do
-    @solr_instance = SolrWrapper.instance
+    @solr_instance = SolrWrapper.default_instance
   end
 
   desc 'Install a clean version of solr. Replaces the existing copy if there is one.'
@@ -17,7 +17,7 @@ namespace :solr do
   desc 'start solr'
   task start: :environment do
     begin
-      puts "Starting solr at #{File.expand_path(@solr_instance.instance_dir)} with options #{@solr_instance.options}"
+      puts "Starting solr at #{@solr_instance.config.url}"
       @solr_instance.start
     rescue => e
       if e.message.include?("Port #{@solr_instance.port} is already being used by another process")
