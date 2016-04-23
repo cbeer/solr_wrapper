@@ -63,9 +63,9 @@ module SolrWrapper
       @download_url ||= default_download_url
     end
 
-    def download_path
-      @download_path ||= static_config.download_path
-      @download_path ||= default_download_path
+    def solr_zip_path
+      @solr_zip_path ||= static_config.solr_zip_path
+      @solr_zip_path ||= default_solr_zip_path
     end
 
     def version_file
@@ -90,7 +90,7 @@ module SolrWrapper
 
     private
 
-      def default_download_path
+      def default_solr_zip_path
         File.join(download_dir, File.basename(download_url))
       end
 
