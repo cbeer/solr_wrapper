@@ -51,7 +51,7 @@ module SolrWrapper
 
     def instance_dir
       @instance_dir ||= static_config.instance_dir
-      @instance_dir ||= File.join(Dir.tmpdir, File.basename(download_url, ".zip"))
+      @instance_dir ||= File.join(tmpdir, File.basename(download_url, ".zip"))
     end
 
     def managed?
@@ -89,6 +89,14 @@ module SolrWrapper
     end
 
     private
+
+      def tmpdir
+        if defined?(Rails) && Rails.root
+          File.join(Rails.root, 'tmp')
+        else
+          Dir.tmpdir
+        end
+      end
 
       def default_solr_zip_path
         File.join(download_dir, File.basename(download_url))
