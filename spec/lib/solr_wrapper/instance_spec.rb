@@ -34,6 +34,15 @@ describe SolrWrapper::Instance do
         solr_instance.with_collection(dir: File.join(FIXTURES_DIR, "basic_configs")) {}
       end
     end
+
+    context 'persistent collections' do
+      it "creates a new collection with options from the config" do
+        expect(solr_instance).to receive(:create).with(
+          hash_including(name: 'project-development'))
+        expect(solr_instance).not_to receive(:delete)
+        solr_instance.with_collection(name: 'project-development', dir: 'solr/config/', persist: true) {}
+      end
+    end
   end
 
   context 'with a SolrCloud instance' do

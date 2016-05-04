@@ -52,6 +52,10 @@ args = OptionParser.new do |opts|
     collection_options[:dir] = d
   end
 
+  opts.on("--[no-]persist", "Persist the solr connection data") do |d|
+    collection_options[:persist] = d
+  end
+
   opts.on("--no-checksum", "Skip running checksum validation on the downloaded file") do |d|
     options[:ignore_md5sum] = true
   end

@@ -96,7 +96,7 @@ module SolrWrapper
 
     def collection_options
       hash = options.fetch(:collection, {})
-      Configuration.slice(convert_keys(hash), :name, :dir)
+      Configuration.slice(convert_keys(hash), :name, :dir, :persist)
     end
 
     def configsets

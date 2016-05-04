@@ -208,7 +208,7 @@ module SolrWrapper
       begin
         yield name
       ensure
-        delete name
+        delete name unless options[:persist]
       end
     end
 
