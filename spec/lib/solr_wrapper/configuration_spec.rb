@@ -38,7 +38,7 @@ describe SolrWrapper::Configuration do
     end
     let(:options) { { config: 'spec/fixtures/sample_config.yml' } }
     it "uses values from the config file" do
-      expect(config.collection_options).to eq(name: 'project-development', dir: 'solr/config/')
+      expect(config.collection_options).to eq(name: 'project-development', dir: 'solr/config/', persist: false)
     end
   end
 
