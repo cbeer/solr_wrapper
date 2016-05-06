@@ -5,8 +5,14 @@ require 'optparse'
 
 options = {}
 collection_options = {}
+subtext = <<HELP
+Commonly used command are:
+   clean :     cleans all data from solr and configures a clean instance based on configuration options
+See 'solr_wrapper COMMAND --help' for more information on a specific command.
+HELP
+
 args = OptionParser.new do |opts|
-  opts.banner = "Usage: solr_wrapper [options]"
+  opts.banner = "Usage: solr_wrapper [options] subcommand"
 
   opts.on("-v", "--[no-]verbose", "Run verbosely") do |v|
     options[:verbose] = v
@@ -59,9 +65,23 @@ args = OptionParser.new do |opts|
   opts.on("--no-checksum", "Skip running checksum validation on the downloaded file") do |d|
     options[:ignore_md5sum] = true
   end
+
+  opts.separator ""
+  opts.separator subtext
 end
 
+
+subcommands = {
+    'clean' => OptionParser.new do |opts|
+      opts.banner = "Usage: clean"
+    end,
+}
+
+
 begin
+  args.order!
+  command = ARGV.shift
+  subcommands[command].order! if command
   args.parse!
 rescue => error
   $stderr.puts "ERROR: #{error}\n"
@@ -73,6 +93,17 @@ end
 options[:verbose] = true if options[:verbose].nil?
 
 instance = SolrWrapper.instance(options)
+
+if command == 'clean'
+  if instance.started?
+    $stderr.puts "Please stop solr before cleaning"
+    exit 1
+  end
+  $stderr.puts "cleaning #{instance.instance_dir}..."
+  instance.remove_instance_dir!
+  exit 0
+end
+
 $stderr.print "Starting Solr #{instance.version} on port #{instance.port} ... "
 instance.wrap do |conn|
   conn.with_collection(collection_options) do
