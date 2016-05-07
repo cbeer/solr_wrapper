@@ -26,7 +26,7 @@ SolrWrapper.wrap port: 8983,
                  instance_dir: '/opt/solr'
 ```
 
-Options:
+### Valid ruby and YAML options
 
 |Option         |                                         |
 |---------------|-----------------------------------------|
@@ -44,6 +44,7 @@ Options:
 | ignore_md5sum | (Boolean) |
 | solr_options  | (Hash) |
 | env           | (Hash) |
+| preserve      | (Boolean) Preserves the data in you collection between startups |
 
 ```ruby
 solr.with_collection(name: 'collection_name', dir: 'path_to_solr_configs')
@@ -54,6 +55,30 @@ solr.with_collection(name: 'collection_name', dir: 'path_to_solr_configs')
 ```console
 $ solr_wrapper -p 8983
 ```
+To see a list of valid options when using solr_wrapper to launch a Solr instance from the command line:
+```
+$ solr_wrapper -h
+```
+
+### Configuration file
+SolrWrapper can read configuration options from a YAML configuration file.
+By default, it looks for configuration files at `.solr_wrapper` and `~/.solr_wrapper`.
+
+You can also specify a configuration file when launching from the command line as follows:
+```
+$ solr_wrapper -config <path_to_config_file>
+```
+
+### Cleaning your repository from the command line
+
+By defualt SorlWrapper will clean out your data when it shuts down.
+If you utilize the preserve option your data will remain between runs.
+
+To clean out data that is being preserved explicitly run:
+```
+$ solr_wrapper <configuration options> clean
+```
+***Note*** You must use the same configuration options on the clean command as you do on the run command to clean the correct instance.
 
 ## Rake tasks
 
