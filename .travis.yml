@@ -6,7 +6,7 @@ rvm:
   - jruby-9.0.1.0
 cache:
   directories:
-  - /tmp/solr-5.4.1
+  - /tmp/solr_wrapper
 
 jdk:
   - oraclejdk8

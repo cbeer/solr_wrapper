@@ -58,7 +58,9 @@ module SolrWrapper
       if defined?(Rails) && Rails.root
         File.join(Rails.root, 'tmp')
       else
-        Dir.tmpdir
+        File.join(Dir.tmpdir, 'solr_wrapper').tap do |n|
+          Dir.mkdir(n, 0700) unless File.directory? n
+        end
       end
     end
 
