@@ -1,4 +1,5 @@
 require 'delegate'
+require 'faraday'
 
 module SolrWrapper
   # Configuraton that comes from static and dynamic sources.
@@ -108,15 +109,26 @@ module SolrWrapper
         @download_dir
       end
 
-
       def default_download_url
         @default_url ||= begin
           json = open(static_config.mirror_url).read
           doc = JSON.parse(json)
-          doc['preferred'] + doc['path_info']
+          url = doc['preferred'] + doc['path_info']
+
+          response = Faraday.head(url)
+
+          if response.success?
+            url
+          else
+            archive_download_url
+          end
         end
-      rescue SocketError
-        "http://www.us.apache.org/dist/lucene/solr/#{static_config.version}/solr-#{static_config.version}.zip"
+      rescue SocketError, Faraday::Error
+        archive_download_url
+      end
+
+      def archive_download_url
+        "http://archive.apache.org/dist/lucene/solr/#{static_config.version}/solr-#{static_config.version}.zip"
       end
 
       def random_open_port
