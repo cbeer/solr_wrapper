@@ -42,6 +42,35 @@ describe SolrWrapper::Instance do
         expect(solr_instance).not_to receive(:delete)
         solr_instance.with_collection(name: 'project-development', dir: 'solr/config/', persist: true) {}
       end
+
+      describe 'single solr node' do
+        it 'allows persistent collection on restart' do
+          subject.wrap do |solr|
+            solr.with_collection(name: 'solr-node-persistent-core', dir: File.join(FIXTURES_DIR, 'basic_configs'), persist: true) {}
+          end
+
+          subject.wrap do |solr|
+            solr.with_collection(name: 'solr-node-persistent-core', dir: File.join(FIXTURES_DIR, 'basic_configs'), persist: true) {}
+            solr.delete 'solr-node-persistent-core'
+          end
+        end
+      end
+
+      describe 'solr cloud' do
+        let(:options) { { cloud: true } }
+
+        it 'allows persistent collection on restart' do
+          subject.wrap do |solr|
+            config_name = solr.upconfig dir: File.join(FIXTURES_DIR, 'basic_configs')
+            solr.with_collection(name: 'solr-cloud-persistent-collection', config_name: config_name, persist: true) {}
+          end
+
+          subject.wrap do |solr|
+            solr.with_collection(name: 'solr-cloud-persistent-collection', persist: true) {}
+            solr.delete 'solr-cloud-persistent-collection'
+          end
+        end
+      end
     end
   end
 

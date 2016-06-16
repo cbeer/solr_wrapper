@@ -4,6 +4,7 @@ require 'solr_wrapper/settings'
 require 'solr_wrapper/md5'
 require 'solr_wrapper/downloader'
 require 'solr_wrapper/instance'
+require 'solr_wrapper/client'
 
 module SolrWrapper
   def self.default_solr_version
