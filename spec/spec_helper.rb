@@ -5,6 +5,7 @@ require 'solr_wrapper'
 require 'simple_solr_client'
 
 require 'rspec'
+require 'fakeweb'
 
 FIXTURES_DIR = File.expand_path("fixtures", File.dirname(__FILE__))
 

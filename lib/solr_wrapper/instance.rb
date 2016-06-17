@@ -147,6 +147,10 @@ module SolrWrapper
       create_options[:c] = options[:name] if options[:name]
       create_options[:n] = options[:config_name] if options[:config_name]
       create_options[:d] = options[:dir] if options[:dir]
+
+      # short-circuit if we're using persisted data with an existing core/collection
+      return if options[:persist] && create_options[:c] && client.exists?(create_options[:c])
+
       exec("create", create_options)
 
       options[:name]
@@ -379,6 +383,10 @@ module SolrWrapper
 
     def zkhost
       "#{config.zookeeper_host}:#{config.zookeeper_port}" if config.cloud
+    end
+
+    def client
+      SolrWrapper::Client.new(url)
     end
 
     def raise_error_unless_extracted
