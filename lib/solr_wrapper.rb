@@ -39,4 +39,6 @@ module SolrWrapper
   def self.wrap(options = {}, &block)
     instance(options).wrap &block
   end
+
+  class SolrWrapperError < StandardError; end
 end
