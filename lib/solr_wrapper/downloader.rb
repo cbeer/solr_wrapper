@@ -7,6 +7,9 @@ module SolrWrapper
       open(url, content_length_proc: ->(bytes) { pbar.total = bytes }, progress_proc: ->(bytes) { pbar.progress = bytes }) do |io|
         IO.copy_stream(io, output)
       end
+    rescue OpenURI::HTTPError => e
+      $stderr.puts "SolrWrapper::Downloader: Error opening #{url} #{e.message}"
+      raise
     end
 
     class SafeProgressBar < ProgressBar::Base
