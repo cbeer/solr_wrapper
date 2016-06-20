@@ -123,7 +123,7 @@ module SolrWrapper
             archive_download_url
           end
         end
-      rescue SocketError, Faraday::Error
+      rescue Errno::ECONNRESET, SocketError, Faraday::Error
         archive_download_url
       end
 
