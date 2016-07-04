@@ -139,7 +139,7 @@ module SolrWrapper
       end
 
       def default_configuration_paths
-        ['.solr_wrapper', '~/.solr_wrapper']
+        ['.solr_wrapper.yml', '.solr_wrapper', '~/.solr_wrapper.yml', '~/.solr_wrapper']
       end
   end
 end
