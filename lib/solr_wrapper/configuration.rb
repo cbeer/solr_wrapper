@@ -55,7 +55,7 @@ module SolrWrapper
     end
 
     def default_download_dir
-      if defined?(Rails) && Rails.root
+      if defined?(Rails) && Rails.respond_to?(:root) && Rails.root
         File.join(Rails.root, 'tmp')
       else
         Dir.tmpdir
