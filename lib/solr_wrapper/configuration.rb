@@ -2,9 +2,11 @@ module SolrWrapper
   class Configuration
     attr_reader :options
 
-    def initialize(options)
-      @options = read_config(options[:config], options[:verbose])
-             .merge options
+    def initialize(options = {})
+      @config = options[:config]
+      @verbose = options[:verbose]
+
+      @options = load_configs(Array(options[:config])).merge(options)
     end
 
     def solr_xml
@@ -87,7 +89,7 @@ module SolrWrapper
     end
 
     def verbose?
-      !!options.fetch(:verbose, false)
+      @verbose || (options && !!options.fetch(:verbose, false))
     end
 
     def version_file
@@ -114,21 +116,23 @@ module SolrWrapper
         keys.each_with_object({}) { |k, hash| hash[k] = source[k] if source.has_key?(k) }
       end
 
-      def read_config(config_file, verbose)
-        default_configuration_paths.each do |p|
+      def load_configs(config_files)
+        config = {}
+
+        (default_configuration_paths + config_files.compact).each do |p|
           path = File.expand_path(p)
-          config_file ||= path if File.exist? path
+          next unless File.exist? path
+          config.merge!(read_config(path))
         end
 
-        unless config_file
-          $stdout.puts "No config specified" if verbose
-          return {}
-        end
+        config
+      end
 
-        $stdout.puts "Loading configuration from #{config_file}" if verbose
+      def read_config(config_file)
+        $stdout.puts "Loading configuration from #{config_file}" if verbose?
         config = YAML.load(ERB.new(IO.read(config_file)).result(binding))
         unless config
-          $stderr.puts "Unable to parse config #{config_file}" if verbose
+          $stderr.puts "Unable to parse config #{config_file}" if verbose?
           return {}
         end
         convert_keys(config)
@@ -139,7 +143,7 @@ module SolrWrapper
       end
 
       def default_configuration_paths
-        ['.solr_wrapper.yml', '.solr_wrapper', '~/.solr_wrapper.yml', '~/.solr_wrapper']
+        ['~/.solr_wrapper.yml', '~/.solr_wrapper', '.solr_wrapper.yml', '.solr_wrapper']
       end
   end
 end
