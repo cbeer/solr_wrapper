@@ -81,7 +81,10 @@ subcommands = {
 begin
   args.order!
   command = ARGV.shift
-  subcommands[command].order! if command
+  if command
+    raise "Bad subcommand: #{command}" unless subcommands[command]
+    subcommands[command].order!
+  end
   args.parse!
 rescue => error
   $stderr.puts "ERROR: #{error}\n"
