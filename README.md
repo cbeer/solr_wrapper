@@ -44,7 +44,7 @@ SolrWrapper.wrap port: 8983,
 | ignore_md5sum | (Boolean) |
 | solr_options  | (Hash) |
 | env           | (Hash) |
-| preserve      | (Boolean) Preserves the data in you collection between startups |
+| persist      | (Boolean) Preserves the data in you collection between startups |
 
 ```ruby
 solr.with_collection(name: 'collection_name', dir: 'path_to_solr_configs')
