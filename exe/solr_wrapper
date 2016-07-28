@@ -111,6 +111,8 @@ instance.wrap do |conn|
     begin
       conn.wait
     rescue Interrupt
+      Signal.trap("SIGTERM") {"IGNORE"}
+      Signal.trap("SIGINT") {"IGNORE"}
       $stderr.puts "Solr is shutting down."
     end
   end
