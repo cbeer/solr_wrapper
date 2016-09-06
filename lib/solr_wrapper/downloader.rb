@@ -8,7 +8,7 @@ module SolrWrapper
         IO.copy_stream(io, output)
       end
     rescue OpenURI::HTTPError => e
-      raise SolrWrapperError, "Unable to download solr from #{url}\n#{e.message}"
+      raise SolrWrapperError, "Unable to download solr from #{url}\n#{e.message}: #{e.io.read}"
     end
 
     class SafeProgressBar < ProgressBar::Base
