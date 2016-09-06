@@ -74,7 +74,11 @@ module SolrWrapper
     end
 
     def md5url
-      "http://archive.apache.org/dist/lucene/solr/#{static_config.version}/solr-#{static_config.version}.zip.md5"
+      if default_download_url == archive_download_url
+        "#{archive_download_url}.md5"
+      else
+        "http://www.us.apache.org/dist/lucene/solr/#{static_config.version}/solr-#{static_config.version}.zip.md5"
+      end
     end
 
     def md5sum_path
