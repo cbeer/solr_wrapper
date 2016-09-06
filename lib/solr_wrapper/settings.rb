@@ -132,7 +132,7 @@ module SolrWrapper
       end
 
       def archive_download_url
-        "http://archive.apache.org/dist/lucene/solr/#{static_config.version}/solr-#{static_config.version}.zip"
+        "https://archive.apache.org/dist/lucene/solr/#{static_config.version}/solr-#{static_config.version}.zip"
       end
 
       def random_open_port
