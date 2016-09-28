@@ -6,7 +6,7 @@ module SolrWrapper
     end
 
     def clean!
-      FileUtils.remove_entry(config.md5sum_path) if File.exists? config.md5sum_path
+      FileUtils.remove_entry(config.md5sum_path) if File.exist? config.md5sum_path
     end
 
     def validate?(file)
@@ -33,7 +33,7 @@ module SolrWrapper
       end
 
       def md5file
-        unless File.exists? config.md5sum_path
+        unless File.exist? config.md5sum_path
           Downloader.fetch_with_progressbar config.md5url, config.md5sum_path
         end
 

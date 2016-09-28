@@ -56,7 +56,7 @@ module SolrWrapper
     end
 
     def managed?
-      File.exists?(instance_dir)
+      File.exist?(instance_dir)
     end
 
     def download_url
