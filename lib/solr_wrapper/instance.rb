@@ -221,16 +221,16 @@ module SolrWrapper
     def clean!
       stop
       remove_instance_dir!
-      FileUtils.remove_entry(config.download_dir, true) if File.exists?(config.download_dir)
-      FileUtils.remove_entry(config.tmp_save_dir, true) if File.exists? config.tmp_save_dir
+      FileUtils.remove_entry(config.download_dir, true) if File.exist?(config.download_dir)
+      FileUtils.remove_entry(config.tmp_save_dir, true) if File.exist? config.tmp_save_dir
       md5.clean!
-      FileUtils.remove_entry(config.version_file) if File.exists? config.version_file
+      FileUtils.remove_entry(config.version_file) if File.exist? config.version_file
     end
 
     ##
     # Clean up any files in the Solr instance dir
     def remove_instance_dir!
-      FileUtils.remove_entry(instance_dir, true) if File.exists? instance_dir
+      FileUtils.remove_entry(instance_dir, true) if File.exist? instance_dir
     end
 
     def configure
@@ -278,18 +278,18 @@ module SolrWrapper
 
       config.instance_dir
     ensure
-      FileUtils.remove_entry config.tmp_save_dir if File.exists? config.tmp_save_dir
+      FileUtils.remove_entry config.tmp_save_dir if File.exist? config.tmp_save_dir
     end
     # rubocop:enable Lint/RescueException
 
     protected
 
     def extracted?
-      File.exists?(config.solr_binary) && extracted_version == config.version
+      File.exist?(config.solr_binary) && extracted_version == config.version
     end
 
     def download
-      unless File.exists?(config.solr_zip_path) && md5.validate?(config.solr_zip_path)
+      unless File.exist?(config.solr_zip_path) && md5.validate?(config.solr_zip_path)
         Downloader.fetch_with_progressbar config.download_url, config.solr_zip_path
         md5.validate! config.solr_zip_path
       end
@@ -372,7 +372,7 @@ module SolrWrapper
     end
 
     def extracted_version
-      File.read(config.version_file).strip if File.exists? config.version_file
+      File.read(config.version_file).strip if File.exist? config.version_file
     end
 
     def extracted_version=(version)
