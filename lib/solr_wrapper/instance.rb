@@ -353,7 +353,7 @@ module SolrWrapper
 
       stringio.rewind
       if exit_status != 0 && cmd != 'status'
-        raise "Failed to execute solr #{cmd}: #{stringio.read}"
+        raise "Failed to execute solr #{cmd}: #{stringio.read}. Further information may be available in #{instance_dir}/logs"
       end
 
       stringio
