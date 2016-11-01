@@ -8,6 +8,7 @@ collection_options = {}
 subtext = <<HELP
 Commonly used command are:
    clean :     cleans all data from solr and configures a clean instance based on configuration options
+   dir   :     prints the solr instance dir
 See 'solr_wrapper COMMAND --help' for more information on a specific command.
 HELP
 
@@ -75,6 +76,9 @@ subcommands = {
     'clean' => OptionParser.new do |opts|
       opts.banner = "Usage: clean"
     end,
+    'dir' => OptionParser.new do |opts|
+      opts.banner = "Usage: dir"
+    end,
 }
 
 
@@ -94,26 +98,28 @@ end
 
 instance = SolrWrapper.instance(options)
 
-if command == 'clean'
+case command
+when 'clean'
   if instance.started?
     $stderr.puts "Please stop solr before cleaning"
     exit 1
   end
   $stderr.puts "cleaning #{instance.instance_dir}..."
   instance.remove_instance_dir!
-  exit 0
-end
-
-$stderr.print "Starting Solr #{instance.version} on port #{instance.port} ... "
-instance.wrap do |conn|
-  conn.with_collection(collection_options) do
-    $stderr.puts "http://#{instance.host}:#{instance.port}/solr/"
-    begin
-      conn.wait
-    rescue Interrupt
-      Signal.trap("SIGTERM") {"IGNORE"}
-      Signal.trap("SIGINT") {"IGNORE"}
-      $stderr.puts "Solr is shutting down."
+when 'dir'
+  puts instance.instance_dir
+else
+  $stderr.print "Starting Solr #{instance.version} on port #{instance.port} ... "
+  instance.wrap do |conn|
+    conn.with_collection(collection_options) do
+      $stderr.puts "http://#{instance.host}:#{instance.port}/solr/"
+      begin
+        conn.wait
+      rescue Interrupt
+        Signal.trap("SIGTERM") {"IGNORE"}
+        Signal.trap("SIGINT") {"IGNORE"}
+        $stderr.puts "Solr is shutting down."
+      end
     end
   end
 end
