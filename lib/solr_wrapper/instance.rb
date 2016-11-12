@@ -59,11 +59,15 @@ module SolrWrapper
     end
 
     def wrap(&_block)
-      extract_and_configure
-      start
-      yield self
-    ensure
-      stop
+      raise "There is a Solr instance already running on port #{port}." if started?
+
+      begin
+        extract_and_configure
+        start
+        yield self
+      ensure
+        stop
+      end
     end
 
     ##
