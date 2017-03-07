@@ -151,8 +151,12 @@ describe SolrWrapper::Instance do
   end
 
   describe "#version" do
+    before do
+      allow(solr_instance.config).to receive(:version).and_return('solr-version-number')
+    end
+
     subject { solr_instance.version }
-    it { is_expected.to eq '6.4.1' }
+    it { is_expected.to eq 'solr-version-number' }
   end
 
   describe "#md5" do
