@@ -7,5 +7,4 @@ matrix:
   include:
     - rvm: jruby-9.1.7.0
       env: JRUBY_OPTS="-J-Xmx512m"
-jdk:
-  - oraclejdk8
+jdk: oraclejdk8
