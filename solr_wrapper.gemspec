@@ -28,5 +28,5 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "rspec"
   spec.add_development_dependency "simple_solr_client"
   spec.add_development_dependency "coveralls"
-  spec.add_development_dependency "fakeweb"
+  spec.add_development_dependency "webmock"
 end

@@ -5,7 +5,8 @@ require 'solr_wrapper'
 require 'simple_solr_client'
 
 require 'rspec'
-require 'fakeweb'
+require 'webmock/rspec'
+WebMock.allow_net_connect!
 
 FIXTURES_DIR = File.expand_path("fixtures", File.dirname(__FILE__))
 
