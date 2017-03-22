@@ -3,6 +3,9 @@ sudo: false
 rvm:
   - 2.3.1
   - 2.4.0
-  - jruby-9.1.7.0
+matrix:
+  include:
+    - rvm: jruby-9.1.7.0
+      env: JRUBY_OPTS="-J-Xmx512m"
 jdk:
   - oraclejdk8
