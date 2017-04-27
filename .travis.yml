@@ -1,12 +1,13 @@
 language: ruby
 sudo: false
 rvm:
-  - 2.2.5
-  - 2.3.1
-  - jruby-9.1.0.0
-cache:
-  directories:
-  - /tmp/solr-5.4.1
+  - 2.4.1
+  - 2.3.4
+  - jruby-9.1.8.0
 
 jdk:
   - oraclejdk8
+
+env:
+  global:
+    JRUBY_OPTS=-J-Xmx2g

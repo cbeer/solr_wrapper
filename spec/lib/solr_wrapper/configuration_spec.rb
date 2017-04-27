@@ -61,4 +61,26 @@ describe SolrWrapper::Configuration do
       expect(config.configsets).to include(name: 'project-development-configset', dir: 'solr/config/')
     end
   end
+
+  describe '#version' do
+    context 'when it is a version number' do
+      let(:options) { { version: 'x.y.z' } }
+
+      it 'uses that version' do
+        expect(config.version).to eq 'x.y.z'
+      end
+    end
+
+    context 'when it is "latest"' do
+      let(:options) { { version: 'latest'} }
+
+      before do
+        stub_request(:get, 'https://svn.apache.org/repos/asf/lucene/cms/trunk/content/latestversion.mdtext').to_return(body: 'z.y.x')
+      end
+
+      it 'fetches the latest version number from apache' do
+        expect(config.version).to eq 'z.y.x'
+      end
+    end
+  end
 end

@@ -1,3 +1,5 @@
+require 'faraday'
+
 module SolrWrapper
   class Configuration
     attr_reader :options
@@ -77,7 +79,14 @@ module SolrWrapper
     end
 
     def version
-      @version ||= options.fetch(:version, SolrWrapper.default_instance_options[:version])
+      @version ||= begin
+        config_version = options.fetch(:version, SolrWrapper.default_instance_options[:version])
+        if config_version == 'latest'
+          fetch_latest_version
+        else
+          config_version
+        end
+      end
     end
 
     def mirror_url
@@ -144,6 +153,11 @@ module SolrWrapper
 
       def default_configuration_paths
         ['~/.solr_wrapper.yml', '~/.solr_wrapper', '.solr_wrapper.yml', '.solr_wrapper']
+      end
+
+      def fetch_latest_version
+        response = Faraday.get('https://svn.apache.org/repos/asf/lucene/cms/trunk/content/latestversion.mdtext')
+        response.body.strip
       end
   end
 end
