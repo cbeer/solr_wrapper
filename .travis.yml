@@ -7,3 +7,7 @@ rvm:
 
 jdk:
   - oraclejdk8
+
+env:
+  global:
+    JRUBY_OPTS=-J-Xmx2g
