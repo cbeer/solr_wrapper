@@ -148,6 +148,8 @@ module SolrWrapper
       create_options[:n] = options[:config_name] if options[:config_name]
       create_options[:d] = options[:dir] if options[:dir]
 
+      # make sure the instance has a chance to spin up before checking for expected core
+      sleep 5 unless started?
       # short-circuit if we're using persisted data with an existing core/collection
       return if options[:persist] && create_options[:c] && client.exists?(create_options[:c])
 
