@@ -1,6 +1,10 @@
 require 'spec_helper'
 
 describe SolrWrapper do
+  before do
+    FakeWeb.register_uri(:get, 'http://lucene.apache.org/solr/', body: 'the 4.4.4 version is 6.5.1 as of today')
+  end
+  
   describe ".wrap" do
     it "should launch solr" do
       SolrWrapper.wrap do |solr|

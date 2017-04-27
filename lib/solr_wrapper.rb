@@ -5,10 +5,11 @@ require 'solr_wrapper/md5'
 require 'solr_wrapper/downloader'
 require 'solr_wrapper/instance'
 require 'solr_wrapper/client'
+require 'solr_wrapper/solr_version_finder'
 
 module SolrWrapper
   def self.default_solr_version
-    '6.5.0'
+    SolrVersionFinder.find_recent_version || '6.5.0'
   end
 
   def self.default_solr_port
