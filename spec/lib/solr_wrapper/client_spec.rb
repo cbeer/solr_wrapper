@@ -5,18 +5,18 @@ describe SolrWrapper::Client do
 
   describe '#exists?' do
     it 'checks if a solrcloud collection exists' do
-      FakeWeb.register_uri(:get, 'http://localhost:8983/solr/admin/collections?action=LIST&wt=json', body: '{ "collections": ["x", "y", "z"]}')
-      FakeWeb.register_uri(:get, 'http://localhost:8983/solr/admin/cores?action=STATUS&wt=json&core=a', body: '{ "status": { "a": {} } }')
+      stub_request(:get, 'http://localhost:8983/solr/admin/collections?action=LIST&wt=json').to_return(body: '{ "collections": ["x", "y", "z"]}')
+      stub_request(:get, 'http://localhost:8983/solr/admin/cores?action=STATUS&wt=json&core=a').to_return(body: '{ "status": { "a": {} } }')
 
       expect(subject.exists?('x')).to eq true
       expect(subject.exists?('a')).to eq false
     end
 
     it 'checks if a solr core exists' do
-      FakeWeb.register_uri(:get, 'http://localhost:8983/solr/admin/collections?action=LIST&wt=json', body: '{ "error": { "msg": "Solr instance is not running in SolrCloud mode."} }')
+      stub_request(:get, 'http://localhost:8983/solr/admin/collections?action=LIST&wt=json').to_return(body: '{ "error": { "msg": "Solr instance is not running in SolrCloud mode."} }')
 
-      FakeWeb.register_uri(:get, 'http://localhost:8983/solr/admin/cores?action=STATUS&wt=json&core=x', body: '{ "status": { "x": { "name": "x" } } }')
-      FakeWeb.register_uri(:get, 'http://localhost:8983/solr/admin/cores?action=STATUS&wt=json&core=a', body: '{ "status": { "a": {} } }')
+      stub_request(:get, 'http://localhost:8983/solr/admin/cores?action=STATUS&wt=json&core=x').to_return(body: '{ "status": { "x": { "name": "x" } } }')
+      stub_request(:get, 'http://localhost:8983/solr/admin/cores?action=STATUS&wt=json&core=a').to_return(body: '{ "status": { "a": {} } }')
 
       expect(subject.exists?('x')).to eq true
       expect(subject.exists?('a')).to eq false
