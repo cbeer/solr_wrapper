@@ -8,7 +8,7 @@ require 'solr_wrapper/client'
 
 module SolrWrapper
   def self.default_solr_version
-    '6.5.0'
+    '6.5.1'
   end
 
   def self.default_solr_port
