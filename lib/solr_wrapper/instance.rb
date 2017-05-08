@@ -9,6 +9,7 @@ require 'tmpdir'
 require 'zip'
 require 'erb'
 require 'yaml'
+require 'retriable'
 
 module SolrWrapper
   class Instance
@@ -147,6 +148,10 @@ module SolrWrapper
       create_options[:c] = options[:name] if options[:name]
       create_options[:n] = options[:config_name] if options[:config_name]
       create_options[:d] = options[:dir] if options[:dir]
+
+      Retriable.retriable do
+        raise "Not started yet" unless started?
+      end
 
       # short-circuit if we're using persisted data with an existing core/collection
       return if options[:persist] && create_options[:c] && client.exists?(create_options[:c])
