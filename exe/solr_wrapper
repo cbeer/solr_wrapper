@@ -1,5 +1,9 @@
 #!/usr/bin/env ruby
 
+if ENV['RAILS_ENV'] && ENV['RAILS_ENV'] == 'production'
+  $stderr.puts 'Cannot use solr_wrapper in production'
+end
+
 require 'solr_wrapper'
 require 'optparse'
 
@@ -73,12 +77,18 @@ end
 
 
 subcommands = {
-    'clean' => OptionParser.new do |opts|
-      opts.banner = "Usage: clean"
-    end,
-    'dir' => OptionParser.new do |opts|
-      opts.banner = "Usage: dir"
-    end,
+  'clean' => OptionParser.new do |opts|
+    opts.banner = "Usage: clean"
+  end,
+  'dir' => OptionParser.new do |opts|
+    opts.banner = "Usage: dir"
+  end,
+  'status' => OptionParser.new do |opts|
+    opts.banner = "Usage: status"
+  end,
+  'stop' => OptionParser.new do |opts|
+    opts.banner = "Usage: stop"
+  end,
 }
 
 
@@ -100,14 +110,15 @@ instance = SolrWrapper.instance(options)
 
 case command
 when 'clean'
-  if instance.started?
-    $stderr.puts "Please stop solr before cleaning"
-    exit 1
-  end
+  return if ENV['RAILS_ENV'] && ENV['RAILS_ENV'] == 'production'
   $stderr.puts "cleaning #{instance.instance_dir}..."
-  instance.remove_instance_dir!
+  instance.clean!
 when 'dir'
   puts instance.instance_dir
+when 'status'
+  puts instance.status
+when 'stop'
+  instance.stop
 else
   $stderr.print "Starting Solr #{instance.version} on port #{instance.port} ... "
   instance.wrap do |conn|

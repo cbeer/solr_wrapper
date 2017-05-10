@@ -75,7 +75,7 @@ module SolrWrapper
         exec('start', p: port, c: config.cloud)
 
         # Wait for solr to start
-        unless status
+        unless started?
           sleep config.poll_interval
         end
 
@@ -103,20 +103,22 @@ module SolrWrapper
     ##
     # Check the status of a managed Solr service
     def status
-      return true unless config.managed?
-
-      out = exec('status').read
-      out =~ /running on port #{port}/
+      exec('status').read
     rescue
-      false
+      'No status information available'
+    end
+
+    ##
+    # Is Solr running?
+    def started?
+      status =~ /running on port #{port}/ && true || false
     end
 
     def pid
       return unless config.managed?
 
       @pid ||= begin
-        out = exec('status').read
-        out.match(/process (?<pid>\d+) running on port #{port}/) do |m|
+        status.match(/process (?<pid>\d+) running on port #{port}/) do |m|
           m[:pid].to_i
         end
       end
@@ -124,14 +126,8 @@ module SolrWrapper
       nil
     end
 
-    ##
-    # Is Solr running?
-    def started?
-      !!status
-    end
-
     def wait
-      while (Process.getpgid(pid) rescue status)
+      while (Process.getpgid(pid) rescue started?)
         sleep config.poll_interval
       end
     end
@@ -222,11 +218,10 @@ module SolrWrapper
     end
 
     ##
-    # Clean up any files solr_wrapper may have downloaded
+    # Clean up any files solr_wrapper may have downloaded, except the solr-{ver}.zip file
     def clean!
       stop
       remove_instance_dir!
-      FileUtils.remove_entry(config.download_dir, true) if File.exist?(config.download_dir)
       FileUtils.remove_entry(config.tmp_save_dir, true) if File.exist? config.tmp_save_dir
       md5.clean!
       FileUtils.remove_entry(config.version_file) if File.exist? config.version_file
