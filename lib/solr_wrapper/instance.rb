@@ -104,8 +104,12 @@ module SolrWrapper
     # Check the status of a managed Solr service
     def status
       exec('status').read
-    rescue
-      'No status information available'
+    rescue => err
+      [
+        'No status information available',
+        "message: #{err.message}",
+        "stack trace: #{err.backtrace}"
+      ].join("\n")
     end
 
     ##
