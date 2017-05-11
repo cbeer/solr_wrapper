@@ -101,8 +101,18 @@ module SolrWrapper
     end
 
     ##
-    # Check the status of a managed Solr service
-    def status
+    # Is Solr running?
+    def started?
+      status_info =~ /running on port #{port}/ && true || false
+    end
+
+    ##
+    # Check the status of a Solr service
+    alias status started?
+
+    ##
+    # Get the status information for a Solr service
+    def status_info
       exec('status').read
     rescue => err
       [
@@ -112,17 +122,11 @@ module SolrWrapper
       ].join("\n")
     end
 
-    ##
-    # Is Solr running?
-    def started?
-      status =~ /running on port #{port}/ && true || false
-    end
-
     def pid
       return unless config.managed?
 
       @pid ||= begin
-        status.match(/process (?<pid>\d+) running on port #{port}/) do |m|
+        status_info.match(/process (?<pid>\d+) running on port #{port}/) do |m|
           m[:pid].to_i
         end
       end

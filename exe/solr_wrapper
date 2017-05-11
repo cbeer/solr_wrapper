@@ -111,7 +111,7 @@ when 'clean'
 when 'dir'
   puts instance.instance_dir
 when 'status'
-  puts instance.status
+  puts instance.status_info
 when 'stop'
   instance.stop
 else
