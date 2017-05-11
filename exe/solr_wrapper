@@ -1,9 +1,5 @@
 #!/usr/bin/env ruby
 
-if ENV['RAILS_ENV'] && ENV['RAILS_ENV'] == 'production'
-  $stderr.puts 'Cannot use solr_wrapper in production'
-end
-
 require 'solr_wrapper'
 require 'optparse'
 
@@ -110,7 +106,6 @@ instance = SolrWrapper.instance(options)
 
 case command
 when 'clean'
-  return if ENV['RAILS_ENV'] && ENV['RAILS_ENV'] == 'production'
   $stderr.puts "cleaning #{instance.instance_dir}..."
   instance.clean
 when 'dir'
