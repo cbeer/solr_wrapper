@@ -219,12 +219,19 @@ module SolrWrapper
 
     ##
     # Clean up any files solr_wrapper may have downloaded, except the solr-{ver}.zip file
-    def clean!
+    def clean
       stop
       remove_instance_dir!
       FileUtils.remove_entry(config.tmp_save_dir, true) if File.exist? config.tmp_save_dir
-      md5.clean!
       FileUtils.remove_entry(config.version_file) if File.exist? config.version_file
+    end
+
+    ##
+    # Clean up everything solr_wrapper may have downloaded
+    def clean!
+      clean
+      md5.clean!
+      FileUtils.remove_entry(config.download_dir, true) if File.exist?(config.download_dir)
     end
 
     ##

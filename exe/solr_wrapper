@@ -112,7 +112,7 @@ case command
 when 'clean'
   return if ENV['RAILS_ENV'] && ENV['RAILS_ENV'] == 'production'
   $stderr.puts "cleaning #{instance.instance_dir}..."
-  instance.clean!
+  instance.clean
 when 'dir'
   puts instance.instance_dir
 when 'status'
