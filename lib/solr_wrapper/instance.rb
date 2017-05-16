@@ -312,51 +312,12 @@ module SolrWrapper
     # @example start solr in cloud mode on port 8983
     #   exec('start', {p: '8983', c: true})
     def exec(cmd, options = {})
-      silence_output = !options.delete(:output)
+      stringio = StringIO.new
+      # JRuby uses Popen4
+      command_runner = IO.respond_to?(:popen4) ? Popen4Runner : PopenRunner
+      runner = command_runner.new(cmd, options, config)
+      exit_status = runner.run(stringio)
 
-      args = [config.solr_binary, cmd] + config.solr_options.merge(options).map do |k, v|
-        case v
-        when true
-          "-#{k}"
-        when false, nil
-          # don't return anything
-        else
-          ["-#{k}", "#{v}"]
-        end
-      end.flatten.compact
-
-      if IO.respond_to? :popen4
-        # JRuby
-        env_str = config.env.map { |k, v| "#{Shellwords.escape(k)}=#{Shellwords.escape(v)}" }.join(" ")
-        pid, input, output, error = IO.popen4(env_str + " " + args.join(" "))
-        stringio = StringIO.new
-        if config.verbose? && !silence_output
-          IO.copy_stream(output, $stderr)
-          IO.copy_stream(error, $stderr)
-        else
-          IO.copy_stream(output, stringio)
-          IO.copy_stream(error, stringio)
-        end
-
-        input.close
-        output.close
-        error.close
-        exit_status = Process.waitpid2(pid).last
-      else
-        IO.popen(config.env, args + [err: [:child, :out]]) do |io|
-          stringio = StringIO.new
-
-          if config.verbose? && !silence_output
-            IO.copy_stream(io, $stderr)
-          else
-            IO.copy_stream(io, stringio)
-          end
-
-          _, exit_status = Process.wait2(io.pid)
-        end
-      end
-
-      stringio.rewind
       if exit_status != 0 && cmd != 'status'
         raise "Failed to execute solr #{cmd}: #{stringio.read}. Further information may be available in #{instance_dir}/logs"
       end
