@@ -103,7 +103,7 @@ module SolrWrapper
     ##
     # Is Solr running?
     def started?
-      status_info =~ /running on port #{port}/
+      status_info.include? "running on port #{port}"
     end
 
     ##
