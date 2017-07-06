@@ -156,8 +156,11 @@ module SolrWrapper
       end
 
       def fetch_latest_version
-        response = Faraday.get('https://svn.apache.org/repos/asf/lucene/cms/trunk/content/latestversion.mdtext')
-        response.body.strip
+        path = 'https://svn.apache.org/repos/asf/lucene/cms/trunk/content/latestversion.mdtext'
+        Faraday.get(path).body.strip
+      rescue Faraday::ConnectionFailed
+        $stderr.puts "Unable to connect to #{path} to retrieve the latest version. Using a default"
+        SolrWrapper.fallback_solr_version
       end
   end
 end
