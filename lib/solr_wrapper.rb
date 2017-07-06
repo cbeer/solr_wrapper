@@ -14,6 +14,11 @@ module SolrWrapper
     'latest'
   end
 
+  # A version we can fallback to if we can't retreive the latest
+  def self.fallback_solr_version
+    '6.6.0'
+  end
+
   def self.default_solr_port
     '8983'
   end
