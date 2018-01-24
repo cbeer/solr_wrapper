@@ -83,4 +83,14 @@ describe SolrWrapper::Configuration do
       end
     end
   end
+
+  describe '#mirror_url' do
+    context 'with a preferred mirror' do
+      let(:options) { { mirror_url: 'http://lib-solr-mirror.princeton.edu/dist/', version: '7.2.1' } }
+
+      it 'is the URL to the artifact on the preferred mirror' do
+        expect(config.mirror_url).to eq 'http://lib-solr-mirror.princeton.edu/dist/lucene/solr/7.2.1/solr-7.2.1.zip'
+      end
+    end
+  end
 end
