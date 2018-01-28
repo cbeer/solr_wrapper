@@ -13,7 +13,7 @@ module SolrWrapper
 
     class SafeProgressBar < ProgressBar::Base
       def progress=(new_progress)
-        self.total = new_progress if total <= new_progress
+        self.total = new_progress if !total.nil? && total <= new_progress
         super
       end
 
