@@ -89,8 +89,35 @@ module SolrWrapper
       end
     end
 
-    def mirror_url
+    def closest_mirror_url
       "http://www.apache.org/dyn/closer.lua/lucene/solr/#{version}/solr-#{version}.zip?asjson=true"
+    end
+
+    def mirror_url
+      @mirror_url ||= if options[:mirror_url]
+        options[:mirror_url] + "lucene/solr/#{version}/solr-#{version}.zip"
+      else
+        begin
+          json = open(closest_mirror_url).read
+          doc = JSON.parse(json)
+          url = doc['preferred'] + doc['path_info']
+
+          response = Faraday.head(url)
+
+          if response.success?
+            url
+          else
+            archive_download_url
+          end
+
+        rescue Errno::ECONNRESET, SocketError, Faraday::Error
+          archive_download_url
+        end
+      end
+    end
+
+    def archive_download_url
+      "https://archive.apache.org/dist/lucene/solr/#{version}/solr-#{version}.zip"
     end
 
     def cloud
