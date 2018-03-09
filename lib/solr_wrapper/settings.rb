@@ -76,8 +76,8 @@ module SolrWrapper
     def md5url
       if static_config.md5sum =~ URI::regexp
         static_config.md5sum
-      elsif default_download_url == archive_download_url
-        "#{archive_download_url}.md5"
+      elsif default_download_url == static_config.archive_download_url
+        "#{default_download_url}.md5"
       else
         "http://www.us.apache.org/dist/lucene/solr/#{static_config.version}/solr-#{static_config.version}.zip.md5"
       end
@@ -122,25 +122,7 @@ module SolrWrapper
       end
 
       def default_download_url
-        @default_url ||= begin
-          json = open(static_config.mirror_url).read
-          doc = JSON.parse(json)
-          url = doc['preferred'] + doc['path_info']
-
-          response = Faraday.head(url)
-
-          if response.success?
-            url
-          else
-            archive_download_url
-          end
-        end
-      rescue Errno::ECONNRESET, SocketError, Faraday::Error
-        archive_download_url
-      end
-
-      def archive_download_url
-        "https://archive.apache.org/dist/lucene/solr/#{static_config.version}/solr-#{static_config.version}.zip"
+        static_config.mirror_url
       end
 
       def random_open_port
