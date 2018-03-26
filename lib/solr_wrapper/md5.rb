@@ -6,7 +6,7 @@ module SolrWrapper
     end
 
     def clean!
-      FileUtils.remove_entry(config.md5sum_path) if File.exist? config.md5sum_path
+      FileUtils.remove_file(config.md5sum_path, true)
     end
 
     def validate?(file)

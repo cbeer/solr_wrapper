@@ -75,7 +75,7 @@ module SolrWrapper
         exec('start', p: port, c: config.cloud)
 
         # Wait for solr to start
-        unless status
+        unless started?
           sleep config.poll_interval
         end
 
@@ -101,22 +101,32 @@ module SolrWrapper
     end
 
     ##
-    # Check the status of a managed Solr service
-    def status
-      return true unless config.managed?
+    # Is Solr running?
+    def started?
+      status_info.include? "running on port #{port}"
+    end
 
-      out = exec('status').read
-      out =~ /running on port #{port}/
-    rescue
-      false
+    ##
+    # Check the status of a Solr service
+    alias status started?
+
+    ##
+    # Get the status information for a Solr service
+    def status_info
+      exec('status').read
+    rescue => err
+      [
+        'No status information available',
+        "message: #{err.message}",
+        "stack trace: #{err.backtrace}"
+      ].join("\n")
     end
 
     def pid
       return unless config.managed?
 
       @pid ||= begin
-        out = exec('status').read
-        out.match(/process (?<pid>\d+) running on port #{port}/) do |m|
+        status_info.match(/process (?<pid>\d+) running on port #{port}/) do |m|
           m[:pid].to_i
         end
       end
@@ -124,14 +134,8 @@ module SolrWrapper
       nil
     end
 
-    ##
-    # Is Solr running?
-    def started?
-      !!status
-    end
-
     def wait
-      while (Process.getpgid(pid) rescue status)
+      while (Process.getpgid(pid) rescue started?)
         sleep config.poll_interval
       end
     end
@@ -222,14 +226,16 @@ module SolrWrapper
     end
 
     ##
-    # Clean up any files solr_wrapper may have downloaded
-    def clean!
+    # Clean up any files solr_wrapper manages
+    def clean!(clean_downloads: false)
       stop
       remove_instance_dir!
-      FileUtils.remove_entry(config.download_dir, true) if File.exist?(config.download_dir)
       FileUtils.remove_entry(config.tmp_save_dir, true) if File.exist? config.tmp_save_dir
-      md5.clean!
-      FileUtils.remove_entry(config.version_file) if File.exist? config.version_file
+      FileUtils.remove_entry(config.version_file) if File.exist?(config.version_file)
+      if clean_downloads
+        md5.clean!
+        FileUtils.remove_file(config.solr_zip_path, true)
+      end
     end
 
     ##

@@ -7,8 +7,11 @@ options = {}
 collection_options = {}
 subtext = <<HELP
 Commonly used command are:
-   clean :     cleans all data from solr and configures a clean instance based on configuration options
-   dir   :     prints the solr instance dir
+   clean  :    stop and clean data from solr, then create a new instance
+   purge  :    as in 'clean', but this also removes solr download files
+   dir    :    prints the solr instance dir
+   status :    information about running solr cores
+   stop   :    stop a running solr core
 See 'solr_wrapper COMMAND --help' for more information on a specific command.
 HELP
 
@@ -73,12 +76,21 @@ end
 
 
 subcommands = {
-    'clean' => OptionParser.new do |opts|
-      opts.banner = "Usage: clean"
-    end,
-    'dir' => OptionParser.new do |opts|
-      opts.banner = "Usage: dir"
-    end,
+  'clean' => OptionParser.new do |opts|
+    opts.banner = "Usage: clean"
+  end,
+  'purge' => OptionParser.new do |opts|
+    opts.banner = "Usage: purge"
+  end,
+  'dir' => OptionParser.new do |opts|
+    opts.banner = "Usage: dir"
+  end,
+  'status' => OptionParser.new do |opts|
+    opts.banner = "Usage: status"
+  end,
+  'stop' => OptionParser.new do |opts|
+    opts.banner = "Usage: stop"
+  end,
 }
 
 
@@ -100,14 +112,17 @@ instance = SolrWrapper.instance(options)
 
 case command
 when 'clean'
-  if instance.started?
-    $stderr.puts "Please stop solr before cleaning"
-    exit 1
-  end
-  $stderr.puts "cleaning #{instance.instance_dir}..."
-  instance.remove_instance_dir!
+  $stderr.puts "cleaning solr instance: #{instance.instance_dir} ..."
+  instance.clean!
+when 'purge'
+  $stderr.puts "cleaning solr downloads and solr instance: #{instance.instance_dir} ..."
+  instance.clean!(clean_downloads: true)
 when 'dir'
   puts instance.instance_dir
+when 'status'
+  puts instance.status_info
+when 'stop'
+  instance.stop
 else
   $stderr.print "Starting Solr #{instance.version} on port #{instance.port} ... "
   instance.wrap do |conn|
