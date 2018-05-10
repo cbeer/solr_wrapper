@@ -8,6 +8,8 @@ rvm:
 jdk:
   - oraclejdk8
 
+script: curl -vvv https://lucene.apache.org/latestversion.html
+
 env:
   global:
     JRUBY_OPTS=-J-Xmx2g
