@@ -8,7 +8,7 @@ rvm:
 jdk:
   - oraclejdk8
 
-script: curl -vvv https://lucene.apache.org/latestversion.html
+script: curl -vvv http://lucene.apache.org/latestversion.html
 
 env:
   global:
