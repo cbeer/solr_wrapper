@@ -74,10 +74,18 @@ module SolrWrapper
     end
 
     def md5url
-      if default_download_url == static_config.archive_download_url
+      if static_config.md5sum =~ URI::regexp
+        static_config.md5sum
+      elsif default_download_url == static_config.archive_download_url
         "#{default_download_url}.md5"
       else
         "http://www.us.apache.org/dist/lucene/solr/#{static_config.version}/solr-#{static_config.version}.zip.md5"
+      end
+    end
+
+    def md5sum
+      if static_config.md5sum && static_config.md5sum.match(/^[a-f0-9]{32}$/)
+        static_config.md5sum
       end
     end
 
