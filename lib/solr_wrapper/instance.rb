@@ -13,7 +13,7 @@ require 'retriable'
 
 module SolrWrapper
   class Instance
-    attr_reader :config, :md5
+    attr_reader :config, :checksum
 
     ##
     # @param [Hash] options
@@ -23,20 +23,20 @@ module SolrWrapper
     # @option options [String] :port port to run Solr on
     # @option options [Boolean] :cloud Run solr in cloud mode
     # @option options [String] :version_file Local path to store the currently installed version
-    # @option options [String] :download_dir Local directory to store the downloaded Solr zip and its md5 file in (overridden by :solr_zip_path)
+    # @option options [String] :download_dir Local directory to store the downloaded Solr zip and its checksum file in (overridden by :solr_zip_path)
     # @option options [String] :solr_zip_path Local path for storing the downloaded Solr zip file
-    # @option options [Boolean] :validate Should solr_wrapper download a new md5 and (re-)validate the zip file? (default: trueF)
-    # @option options [String] :md5sum Path/URL to MD5 checksum
+    # @option options [Boolean] :validate Should solr_wrapper download a new checksum and (re-)validate the zip file? (default: trueF)
+    # @option options [String] :checksum Path/URL to checksum checksum
     # @option options [String] :solr_xml Path to Solr configuration
     # @option options [String] :extra_lib_dir Path to directory containing extra libraries to copy into instance_dir/lib
     # @option options [Boolean] :verbose return verbose info when running solr commands
-    # @option options [Boolean] :ignore_md5sum
+    # @option options [Boolean] :ignore_checksum
     # @option options [Hash] :solr_options
     # @option options [Hash] :env
     # @option options [String] :config
     def initialize(options = {})
       @config = Settings.new(Configuration.new(options))
-      @md5 = MD5.new(@config)
+      @checksum = Checksum.new(@config)
     end
 
     def host
@@ -228,7 +228,7 @@ module SolrWrapper
       remove_instance_dir!
       FileUtils.remove_entry(config.download_dir, true) if File.exist?(config.download_dir)
       FileUtils.remove_entry(config.tmp_save_dir, true) if File.exist? config.tmp_save_dir
-      md5.clean!
+      checksum.clean!
       FileUtils.remove_entry(config.version_file) if File.exist? config.version_file
     end
 
@@ -294,9 +294,9 @@ module SolrWrapper
     end
 
     def download
-      unless File.exist?(config.solr_zip_path) && md5.validate?(config.solr_zip_path)
+      unless File.exist?(config.solr_zip_path) && checksum.validate?(config.solr_zip_path)
         Downloader.fetch_with_progressbar config.download_url, config.solr_zip_path
-        md5.validate! config.solr_zip_path
+        checksum.validate! config.solr_zip_path
       end
       config.solr_zip_path
     end

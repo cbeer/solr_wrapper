@@ -73,16 +73,16 @@ module SolrWrapper
       static_config.version_file || File.join(instance_dir, "VERSION")
     end
 
-    def md5url
+    def checksum_url
       if default_download_url == static_config.archive_download_url
-        "#{default_download_url}.md5"
+        "#{default_download_url}.#{static_config.checksum_type}"
       else
-        "http://www.us.apache.org/dist/lucene/solr/#{static_config.version}/solr-#{static_config.version}.zip.md5"
+        "http://www.us.apache.org/dist/lucene/solr/#{static_config.version}/solr-#{static_config.version}.zip.#{static_config.checksum_type}"
       end
     end
 
-    def md5sum_path
-      File.join(download_dir, File.basename(md5url))
+    def checksum_path
+      File.join(download_dir, File.basename(checksum_url))
     end
 
     def solr_binary

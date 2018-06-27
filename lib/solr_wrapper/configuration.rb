@@ -23,12 +23,16 @@ module SolrWrapper
       options[:validate]
     end
 
-    def ignore_md5sum
-      options[:ignore_md5sum]
+    def ignore_checksum
+      options[:ignore_checksum]
     end
 
-    def md5sum
-      options[:md5sum]
+    def checksum
+      options[:checksum]
+    end
+
+    def checksum_type
+      options[:checksum_type] ||'sha1'
     end
 
     def url
