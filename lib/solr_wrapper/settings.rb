@@ -43,7 +43,6 @@ module SolrWrapper
       @zookeeper_port ||= "#{port.to_i + 1000}"
     end
 
-
     ##
     # Get a (likely) URL to the solr instance
     def url
@@ -73,24 +72,16 @@ module SolrWrapper
       static_config.version_file || File.join(instance_dir, "VERSION")
     end
 
-    def md5url
-      if default_download_url == static_config.archive_download_url
-        "#{default_download_url}.md5"
-      else
-        "http://www.us.apache.org/dist/lucene/solr/#{static_config.version}/solr-#{static_config.version}.zip.md5"
-      end
-    end
-
-    def md5sum_path
-      File.join(download_dir, File.basename(md5url))
-    end
-
     def solr_binary
       File.join(instance_dir, "bin", "solr")
     end
 
     def tmp_save_dir
       @tmp_save_dir ||= Dir.mktmpdir
+    end
+
+    def default_download_url
+      static_config.mirror_url
     end
 
     private
@@ -111,10 +102,6 @@ module SolrWrapper
         @download_dir ||= static_config.download_dir
         FileUtils.mkdir_p @download_dir
         @download_dir
-      end
-
-      def default_download_url
-        static_config.mirror_url
       end
 
       def random_open_port

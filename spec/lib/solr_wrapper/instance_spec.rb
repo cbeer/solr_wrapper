@@ -159,8 +159,8 @@ describe SolrWrapper::Instance do
     it { is_expected.to eq 'solr-version-number' }
   end
 
-  describe "#md5" do
-    subject { solr_instance.md5 }
-    it { is_expected.to be_instance_of SolrWrapper::MD5 }
+  describe "#checksum_validator" do
+    subject { solr_instance.send(:checksum_validator) }
+    it { is_expected.to be_instance_of SolrWrapper::ChecksumValidator }
   end
 end

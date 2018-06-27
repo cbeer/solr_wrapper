@@ -1,7 +1,7 @@
 require 'solr_wrapper/version'
 require 'solr_wrapper/configuration'
 require 'solr_wrapper/settings'
-require 'solr_wrapper/md5'
+require 'solr_wrapper/checksum_validator'
 require 'solr_wrapper/downloader'
 require 'solr_wrapper/instance'
 require 'solr_wrapper/client'

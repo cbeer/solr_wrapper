@@ -38,11 +38,11 @@ SolrWrapper.wrap port: 8983,
 | version_file  | Local path to store the currently installed version |
 | download_dir  | Local path for storing the downloaded Solr zip file |
 | solr_zip_path | Local path to the Solr zip file |
-| md5sum        | Path/URL to MD5 checksum |
+| checksum      | Path/URL to checksum |
 | solr_xml      | Path to Solr configuration |
 | verbose       | (Boolean) |
 | managed       | (Boolean) |
-| ignore_md5sum | (Boolean) |
+| ignore_checksum | (Boolean) |
 | solr_options  | (Hash) |
 | env           | (Hash) |
 | persist      | (Boolean) Preserves the data in you collection between startups |
