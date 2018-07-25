@@ -27,11 +27,7 @@ module SolrWrapper
     private
 
       def checksumurl(suffix)
-        if config.default_download_url == config.static_config.archive_download_url
-          "#{config.default_download_url}.#{suffix}"
-        else
-          "http://www.us.apache.org/dist/lucene/solr/#{config.static_config.version}/solr-#{config.static_config.version}.zip.#{suffix}"
-        end
+        "http://archive.apache.org/dist/lucene/solr/#{config.static_config.version}/solr-#{config.static_config.version}.zip.#{suffix}"
       end
 
       def checksum_path(suffix)
