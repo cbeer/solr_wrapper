@@ -2,20 +2,18 @@ module SolrWrapper
   class ChecksumValidator
     attr_reader :config
 
-    ALGORITHM = 'sha1'
-
     def initialize(config)
       @config = config
     end
 
     def clean!
-      path = checksum_path(ALGORITHM)
+      path = checksum_path(algorithm)
       FileUtils.remove_entry(path) if File.exist? path
     end
 
     def validate?(file)
       return true if config.validate == false
-      Digest.const_get(ALGORITHM.upcase).file(file).hexdigest == expected_sum(ALGORITHM)
+      Digest.const_get(algorithm.upcase).file(file).hexdigest == expected_sum(algorithm)
     end
 
     def validate!(file)
@@ -52,6 +50,13 @@ module SolrWrapper
           Downloader.fetch_with_progressbar checksumurl(alg), path
         end
         path
+      end
+
+      def algorithm
+        return config.static_config.algorithm if config.static_config.algorithm
+        return 'sha1' if config.static_config.version =~ /^[1-6]/ || config.static_config.version =~ /^[7]\.[0-4]/
+
+        'sha512'
       end
   end
 end
