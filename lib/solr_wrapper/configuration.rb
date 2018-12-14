@@ -31,6 +31,10 @@ module SolrWrapper
       options[:checksum]
     end
 
+    def algorithm
+      options[:algorithm]
+    end
+
     def url
       options[:url]
     end
