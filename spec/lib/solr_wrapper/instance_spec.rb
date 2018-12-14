@@ -83,7 +83,8 @@ describe SolrWrapper::Instance do
           solr.downconfig name: config_name, dir: dir
         end
         solr.with_collection(config_name: config_name) do |collection_name|
-          core = client.core(collection_name)
+          core_name = client.cores.select { |x| x =~ /^#{collection_name}/ }.first
+          core = client.core(core_name)
           unless defined? JRUBY_VERSION
             expect(core.all.size).to eq 0
           end
