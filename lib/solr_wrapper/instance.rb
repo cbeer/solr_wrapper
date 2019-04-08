@@ -318,7 +318,7 @@ module SolrWrapper
       exit_status = runner.run(stringio)
 
       if exit_status != 0 && cmd != 'status'
-        raise "Failed to execute solr #{cmd}: #{stringio.read}. Further information may be available in #{instance_dir}/logs"
+        raise "Failed to execute solr #{cmd}: #{stringio.read}. Further information may be available in #{instance_dir}/server/logs"
       end
 
       stringio
