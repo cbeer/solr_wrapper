@@ -209,15 +209,27 @@ module SolrWrapper
     # @option options [String] :name
     # @option options [String] :dir
     def with_collection(options = {})
-      options = config.collection_options.merge(options)
-      return yield if options.empty?
+      collection = seed(options)
 
-      name = create(options)
+      return yield unless collection
+
       begin
-        yield name
+        yield collection
       ensure
-        delete name unless options[:persist]
+        delete collection unless options[:persist]
       end
+    end
+
+    ##
+    # Create a new collection from the solr_wrapper configuration
+    # @param [Hash] options
+    # @option options [String] :name
+    # @option options [String] :dir
+    # @return [String] name
+    def seed(options = {})
+      options = config.collection_options.merge(options)
+
+      create(options) unless options.empty?
     end
 
     ##

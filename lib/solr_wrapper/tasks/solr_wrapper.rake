@@ -29,6 +29,12 @@ namespace :solr do
         raise "Failed to start solr. #{e.class}: #{e.message}"
       end
     end
+
+    begin
+      @solr_instance.seed
+    rescue => e
+      puts "[WARNING] #{e}"
+    end
   end
 
   desc 'restart solr'
