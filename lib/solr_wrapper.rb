@@ -30,7 +30,7 @@ module SolrWrapper
   end
 
   def self.default_instance(options = {})
-    @default_instance ||= instance(default_instance_options)
+    @default_instance ||= instance(options)
   end
 
   def self.instance(options = {})

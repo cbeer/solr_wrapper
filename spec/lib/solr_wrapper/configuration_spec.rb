@@ -23,20 +23,39 @@ describe SolrWrapper::Configuration do
   end
 
   describe "#load_configs" do
-    before do
-      allow(config).to receive(:default_configuration_paths).and_return([])
-    end
-    context 'with a single config file' do
-      let(:options) { { config: 'spec/fixtures/sample_config.yml' } }
-      it "uses values from the config file" do
-        expect(config.port).to eq '9999'
+    context 'from config files' do
+      before do
+        allow(config).to receive(:default_configuration_paths).and_return([])
+      end
+      context 'with a single config file' do
+        let(:options) { { config: 'spec/fixtures/sample_config.yml' } }
+        it "uses values from the config file" do
+          expect(config.port).to eq '9999'
+        end
+      end
+      context 'with multiple config files' do
+        let(:options) { { config: ['spec/fixtures/sample_config.yml', 'spec/fixtures/another_sample_config.yml'] } }
+        it "uses values from the config file" do
+          expect(config.port).to eq '9998'
+          expect(config.verbose?).to eq true
+        end
       end
     end
-    context 'with multiple config files' do
-      let(:options) { { config: ['spec/fixtures/sample_config.yml', 'spec/fixtures/another_sample_config.yml'] } }
-      it "uses values from the config file" do
-        expect(config.port).to eq '9998'
-        expect(config.verbose?).to eq true
+
+    context 'with default settings' do
+      let(:options) { { port: '8888' } }
+      let(:default_options) { { port: '8984', version: '7.7.2' } }
+
+      before do
+        allow(SolrWrapper).to receive(:default_instance_options).and_return(default_options)
+      end
+
+      it 'uses values from the parameters' do
+        expect(config.port).to eq '8888'
+      end
+
+      it 'falls back to default options' do
+        expect(config.version).to eq '7.7.2'
       end
     end
   end

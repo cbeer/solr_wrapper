@@ -2,13 +2,22 @@ require 'faraday'
 
 module SolrWrapper
   class Configuration
+    def self.default_options
+      {
+        port: '8983',
+        version: 'latest'
+      }
+    end
+
     attr_reader :options
 
     def initialize(options = {})
       @config = options[:config]
       @verbose = options[:verbose]
 
-      @options = load_configs(Array(options[:config])).merge(options)
+      @options = SolrWrapper.default_instance_options.merge(
+        load_configs(Array(options[:config]))
+      ).merge(options);
     end
 
     def solr_xml
@@ -43,7 +52,7 @@ module SolrWrapper
       # Check if the port option has been explicitly set to nil.
       # this means to start solr wrapper on a random open port
       return nil if options.key?(:port) && !options[:port]
-      options.fetch(:port) { SolrWrapper.default_instance_options[:port] }.to_s
+      options[:port].to_s
     end
 
     def zookeeper_host
@@ -84,7 +93,7 @@ module SolrWrapper
 
     def version
       @version ||= begin
-        config_version = options.fetch(:version, SolrWrapper.default_instance_options[:version])
+        config_version = options[:version]
         if config_version == 'latest'
           fetch_latest_version
         else
