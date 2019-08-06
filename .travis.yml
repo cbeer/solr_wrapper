@@ -7,7 +7,7 @@ rvm:
   - jruby-9.2.5.0
 
 jdk:
-  - oraclejdk8
+  - openjdk8
 
 env:
   global:
