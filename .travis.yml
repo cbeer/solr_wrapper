@@ -6,8 +6,8 @@ rvm:
   - jruby-9.2.7.0
 
 jdk:
-  - openjdk11
+  - openjdk8
 
 env:
   global:
-    JRUBY_OPTS=-J-Xmx2g -J--add-opens java.base/sun.nio.ch=org.jruby.dist
+    JRUBY_OPTS=-J-Xmx2g
