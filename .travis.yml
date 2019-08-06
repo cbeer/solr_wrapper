@@ -10,4 +10,4 @@ jdk:
 
 env:
   global:
-    JRUBY_OPTS=-J-Xmx2g
+    JRUBY_OPTS=-J-Xmx2g -J--add-opens java.base/sun.nio.ch=org.jruby.dist
