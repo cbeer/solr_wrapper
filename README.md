@@ -67,7 +67,7 @@ By default, it looks for configuration files at `.solr_wrapper` and `~/.solr_wra
 
 You can also specify a configuration file when launching from the command line as follows:
 ```
-$ solr_wrapper -config <path_to_config_file>
+$ solr_wrapper --config <path_to_config_file>
 ```
 
 ### Cleaning your repository from the command line
