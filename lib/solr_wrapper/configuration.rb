@@ -187,8 +187,8 @@ module SolrWrapper
       end
 
       def fetch_latest_version
-        response = Faraday.get('https://lucene.apache.org/latestversion.html')
-        response.body[/Apache Solr \d+\.\d+\.\d+/][/\d+\.\d+\.\d+/]
+        response = Faraday.get(options.fetch(:latest_version_url, 'https://lucene.apache.org/solr/downloads.html'))
+        response.body[/Solr \d+\.\d+\.\d+/][/\d+\.\d+\.\d+/]
       end
   end
 end
