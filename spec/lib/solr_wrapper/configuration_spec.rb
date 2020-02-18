@@ -75,11 +75,23 @@ describe SolrWrapper::Configuration do
       let(:options) { { version: 'latest'} }
 
       before do
-        stub_request(:get, 'https://lucene.apache.org/latestversion.html').to_return(body: 'Apache Solr 1.2.3')
+        stub_request(:get, 'https://lucene.apache.org/solr/downloads.html').to_return(body: 'Solr 1.2.3 is the latest version')
       end
 
       it 'fetches the latest version number from apache' do
         expect(config.version).to eq '1.2.3'
+      end
+    end
+
+    context 'when it is "latest" and the latest url is configured' do
+      let(:options) { { version: 'latest', latest_version_url: 'https://example.com/latest.html'} }
+
+      before do
+        stub_request(:get, 'https://example.com/latest.html').to_return(body: 'Solr 1.2.1')
+      end
+
+      it 'fetches the latest version number from apache' do
+        expect(config.version).to eq '1.2.1'
       end
     end
   end
