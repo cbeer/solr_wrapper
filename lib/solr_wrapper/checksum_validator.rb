@@ -25,11 +25,15 @@ module SolrWrapper
     private
 
       def checksumurl(suffix)
-        if config.default_download_url == config.static_config.archive_download_url
-          "#{config.default_download_url}.#{suffix}"
+        if remote_checksum?(suffix)
+          config.checksum
         else
-          "http://www.us.apache.org/dist/lucene/solr/#{config.static_config.version}/solr-#{config.static_config.version}.zip.#{suffix}"
+          "http://archive.apache.org/dist/lucene/solr/#{config.static_config.version}/solr-#{config.static_config.version}.zip.#{suffix}"
         end
+      end
+
+      def remote_checksum?(alg)
+        config.checksum && config.checksum.match(/http.*#{alg}/, 0)
       end
 
       def checksum_path(suffix)
