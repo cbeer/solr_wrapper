@@ -20,6 +20,25 @@ module SolrWrapper
       @static_config = static_config
     end
 
+    def as_json
+      {
+        host: host,
+        zookeeper_host: zookeeper_host,
+        port: port,
+        zookeeper_port: zookeeper_port,
+        url: url,
+        instance_dir: instance_dir,
+        managed: managed?,
+        download_url: download_url,
+        download_dir: download_dir,
+        solr_zip_path: solr_zip_path,
+        version_file: version_file,
+        solr_binary: solr_binary,
+        tmp_save_dir: tmp_save_dir,
+        default_download_url: default_download_url
+      }
+    end
+
     ##
     # Get the host this Solr instance is bound to
     def host

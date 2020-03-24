@@ -35,7 +35,16 @@ module SolrWrapper
     # @option options [Hash] :env
     # @option options [String] :config
     def initialize(options = {})
+      @debug = options.fetch(:debug, false)
       @config = Settings.new(Configuration.new(options))
+    end
+
+    def debug?
+      @debug
+    end
+
+    def as_json
+      config.as_json
     end
 
     def host
