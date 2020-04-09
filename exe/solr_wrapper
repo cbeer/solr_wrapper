@@ -19,6 +19,10 @@ args = OptionParser.new do |opts|
     options[:verbose] = v
   end
 
+  opts.on("--print-config", "Print the configuration parameters") do |d|
+    options[:print_config] = true
+  end
+
   opts.on("--config FILE", "Load configuration from a file") do |v|
     options[:config] = v
   end
@@ -97,6 +101,12 @@ rescue => error
 end
 
 instance = SolrWrapper.instance(options)
+
+if options[:print_config]
+  $stderr.puts '### solr_wrapper configuration ###'
+  $stderr.puts instance.config.to_yaml
+  $stderr.puts '#####'
+end
 
 case command
 when 'clean'

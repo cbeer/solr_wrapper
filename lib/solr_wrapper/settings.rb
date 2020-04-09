@@ -20,6 +20,25 @@ module SolrWrapper
       @static_config = static_config
     end
 
+    def to_yaml(*args)
+      static_config.options.merge({
+        version: version,
+        verbose: verbose?,
+        download_dir: download_dir,
+        host: host,
+        zookeeper_host: zookeeper_host,
+        port: port,
+        zookeeper_port: zookeeper_port,
+        url: url,
+        instance_dir: instance_dir,
+        download_url: download_url,
+        solr_zip_path: solr_zip_path,
+        version_file: version_file,
+        mirror_url: default_download_url.gsub(%r{/lucene/solr.*}, ''),
+        tmp_save_dir: tmp_save_dir
+      }).to_yaml(*args)
+    end
+
     ##
     # Get the host this Solr instance is bound to
     def host
@@ -27,7 +46,7 @@ module SolrWrapper
     end
 
     def zookeeper_host
-      @zookeeper_host ||= static_config.zookeeper_port
+      @zookeeper_host ||= static_config.zookeeper_host
       @zookeeper_host ||= host
     end
 
@@ -77,6 +96,7 @@ module SolrWrapper
     end
 
     def tmp_save_dir
+      @tmp_save_dir ||= static_config.tmp_save_dir
       @tmp_save_dir ||= Dir.mktmpdir
     end
 
