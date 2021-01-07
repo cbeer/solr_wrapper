@@ -1,4 +1,4 @@
-require 'faraday'
+require 'http'
 
 module SolrWrapper
   class Configuration
@@ -102,19 +102,18 @@ module SolrWrapper
         options[:mirror_url] + "lucene/solr/#{version}/solr-#{version}.zip"
       else
         begin
-          json = Faraday.get(closest_mirror_url).body
+          json = HTTP.get(closest_mirror_url).body
           doc = JSON.parse(json)
           url = doc['preferred'] + doc['path_info']
 
-          response = Faraday.head(url)
+          response = HTTP.head(url)
 
-          if response.success?
+          if response.status.success?
             url
           else
             archive_download_url
           end
-
-        rescue Errno::ECONNRESET, SocketError, Faraday::Error
+        rescue Errno::ECONNRESET, SocketError, HTTP::Error
           archive_download_url
         end
       end
@@ -187,8 +186,8 @@ module SolrWrapper
       end
 
       def fetch_latest_version
-        response = Faraday.get(options.fetch(:latest_version_url, 'https://lucene.apache.org/solr/downloads.html'))
-        response.body[/Solr \d+\.\d+\.\d+/][/\d+\.\d+\.\d+/]
+        response = HTTP.get(options.fetch(:latest_version_url, 'https://lucene.apache.org/solr/downloads.html'))
+        response.body.to_s[/Solr \d+\.\d+\.\d+/][/\d+\.\d+\.\d+/]
       end
   end
 end

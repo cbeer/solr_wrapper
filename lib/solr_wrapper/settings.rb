@@ -1,5 +1,4 @@
 require 'delegate'
-require 'faraday'
 
 module SolrWrapper
   # Configuraton that comes from static and dynamic sources.

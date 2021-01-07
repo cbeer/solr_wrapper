@@ -1,6 +1,15 @@
 require 'spec_helper'
 
 describe SolrWrapper do
+  # WebMock messes with HTTP.rbs ability to stream responses
+  before(:all) do
+    WebMock.disable!
+  end
+
+  after(:all) do
+    WebMock.enable!
+  end
+
   describe ".wrap" do
     it "should launch solr" do
       SolrWrapper.wrap do |solr|

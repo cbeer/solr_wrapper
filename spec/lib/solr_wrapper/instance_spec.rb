@@ -1,6 +1,15 @@
 require 'spec_helper'
 
 describe SolrWrapper::Instance do
+  # WebMock messes with HTTP.rbs ability to stream responses
+  before(:all) do
+    WebMock.disable!
+  end
+
+  after(:all) do
+    WebMock.enable!
+  end
+
   let(:options) { {} }
   let(:solr_instance) { SolrWrapper::Instance.new(options) }
   subject { solr_instance }
