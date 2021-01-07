@@ -102,7 +102,7 @@ module SolrWrapper
         options[:mirror_url] + "lucene/solr/#{version}/solr-#{version}.zip"
       else
         begin
-          json = open(closest_mirror_url).read
+          json = Faraday.get(closest_mirror_url).body
           doc = JSON.parse(json)
           url = doc['preferred'] + doc['path_info']
 
