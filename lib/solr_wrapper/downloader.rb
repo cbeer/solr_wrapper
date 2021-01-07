@@ -9,7 +9,7 @@ module SolrWrapper
       response = HTTP.follow.get(url)
       pbar.total = response.headers['content-length'].to_i
 
-      File.open(output, 'w') do |f|
+      File.open(output, 'wb') do |f|
         response.body.each do |chunk|
           f.write(chunk)
           pbar.progress += chunk.length
