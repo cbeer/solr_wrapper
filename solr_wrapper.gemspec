@@ -8,7 +8,7 @@ Gem::Specification.new do |spec|
   spec.version       = SolrWrapper::VERSION
   spec.authors       = ["Chris Beer"]
   spec.email         = ["chris@cbeer.info"]
-  spec.summary       = %q{Solr 5 service wrapper}
+  spec.summary       = %q{Solr service wrapper}
   spec.homepage      = "https://github.com/cbeer/solr_wrapper"
   spec.license       = "MIT"
 
