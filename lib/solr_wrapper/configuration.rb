@@ -186,7 +186,7 @@ module SolrWrapper
       end
 
       def fetch_latest_version
-        response = HTTP.get(options.fetch(:latest_version_url, 'https://lucene.apache.org/solr/downloads.html'))
+        response = HTTP.follow.get(options.fetch(:latest_version_url, 'https://solr.apache.org/solr/downloads.html'))
         response.body.to_s[/Solr \d+\.\d+\.\d+/][/\d+\.\d+\.\d+/]
       end
   end
