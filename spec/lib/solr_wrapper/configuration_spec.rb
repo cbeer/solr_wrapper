@@ -75,7 +75,7 @@ describe SolrWrapper::Configuration do
       let(:options) { { version: 'latest'} }
 
       before do
-        stub_request(:get, 'https://solr.apache.org/solr/downloads.html').to_return(body: 'Solr 1.2.3 is the latest version')
+        stub_request(:get, 'https://solr.apache.org/downloads.html').to_return(body: 'Solr 1.2.3 is the latest version')
       end
 
       it 'fetches the latest version number from apache' do
