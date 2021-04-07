@@ -94,7 +94,7 @@ module SolrWrapper
     end
 
     def closest_mirror_url
-      "http://www.apache.org/dyn/closer.lua/lucene/solr/#{version}/solr-#{version}.zip?asjson=true"
+      "https://www.apache.org/dyn/closer.lua/lucene/solr/#{version}/solr-#{version}.zip?asjson=true"
     end
 
     def mirror_url
@@ -102,7 +102,7 @@ module SolrWrapper
         options[:mirror_url] + "lucene/solr/#{version}/solr-#{version}.zip"
       else
         begin
-          json = HTTP.get(closest_mirror_url).body
+          json = HTTP.follow.get(closest_mirror_url).body
           doc = JSON.parse(json)
           url = doc['preferred'] + doc['path_info']
 
