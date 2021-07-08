@@ -256,9 +256,11 @@ module SolrWrapper
       return config.instance_dir if extracted?
 
       zip_path = download
+      top_level_dir = nil
 
       begin
         Zip::File.open(zip_path) do |zip_file|
+          top_level_dir = guess_top_dir(zip_file)
           # Handle entries one by one
           zip_file.each do |entry|
             dest_file = File.join(config.tmp_save_dir, entry.name)
@@ -273,7 +275,7 @@ module SolrWrapper
 
       begin
         FileUtils.remove_dir(config.instance_dir, true)
-        FileUtils.cp_r File.join(config.tmp_save_dir, File.basename(config.download_url, ".zip")), config.instance_dir
+        FileUtils.cp_r File.join(config.tmp_save_dir, top_level_dir), config.instance_dir
         self.extracted_version = config.version
         FileUtils.chmod 0755, config.solr_binary
       rescue Exception => e
@@ -290,6 +292,15 @@ module SolrWrapper
 
     def extracted?
       File.exist?(config.solr_binary) && extracted_version == config.version
+    end
+
+    # Guess the name of the top level
+    # directory within the downloaded zip file
+    # (e.g. "solr-1.2.3").
+    # Assumes there's only one such directory.
+    def guess_top_dir(zip_file)
+      dir = zip_file.entries.find { |e| e.name[/^[^\/]+[\/]?$/] }
+      dir.name.tr('/', '')
     end
 
     def download
