@@ -40,7 +40,7 @@ module SolrWrapper
   ##
   # Ensures a Solr service is running before executing the block
   def self.wrap(options = {}, &block)
-    instance(options).wrap &block
+    instance(options).wrap(&block)
   end
 
   class SolrWrapperError < StandardError; end
