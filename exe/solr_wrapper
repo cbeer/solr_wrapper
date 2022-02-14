@@ -100,7 +100,7 @@ instance = SolrWrapper.instance(options)
 
 case command
 when 'clean'
-  if instance.started?
+  if instance.managed? && instance.started?
     $stderr.puts "Please stop solr before cleaning"
     exit 1
   end
