@@ -70,7 +70,7 @@ module SolrWrapper
     # Start Solr and wait for it to become available
     def start
       extract_and_configure
-      if config.managed?
+      if managed?
         exec('start', p: port, c: config.cloud)
 
         # Wait for solr to start
@@ -85,7 +85,7 @@ module SolrWrapper
     ##
     # Stop Solr and wait for it to finish exiting
     def stop
-      if config.managed? && started?
+      if managed? && started?
         exec('stop', p: port)
         wait
       end
@@ -94,7 +94,7 @@ module SolrWrapper
     ##
     # Stop Solr and wait for it to finish exiting
     def restart
-      if config.managed? && started?
+      if managed? && started?
         exec('restart', p: port, c: config.cloud)
       end
     end
@@ -102,7 +102,7 @@ module SolrWrapper
     ##
     # Check the status of a managed Solr service
     def status
-      return true unless config.managed?
+      return true unless managed?
 
       out = exec('status').read
       out =~ /running on port #{port}/
@@ -111,7 +111,7 @@ module SolrWrapper
     end
 
     def pid
-      return unless config.managed?
+      return unless managed?
 
       @pid ||= begin
         out = exec('status').read
@@ -285,6 +285,10 @@ module SolrWrapper
       FileUtils.remove_entry config.tmp_save_dir if File.exist? config.tmp_save_dir
     end
     # rubocop:enable Lint/RescueException
+
+    def managed?
+      config.managed?
+    end
 
     protected
 
