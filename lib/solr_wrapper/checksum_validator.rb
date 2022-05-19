@@ -28,7 +28,7 @@ module SolrWrapper
         if config.default_download_url == config.static_config.archive_download_url
           "#{config.default_download_url}.#{suffix}"
         else
-          "https://archive.apache.org/dist/lucene/solr/#{config.static_config.version}/solr-#{config.static_config.version}.zip.#{suffix}"
+          "https://archive.apache.org/dist/#{config.mirror_artifact_path}.#{suffix}"
         end
       end
 

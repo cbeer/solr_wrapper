@@ -31,13 +31,13 @@ SolrWrapper.wrap port: 8983,
 |Option         |                                         |
 |---------------|-----------------------------------------|
 | instance_dir  | Directory to store the solr index files |
-| url           | URL of the Zip file to download |
+| url           | URL of the TGZ artifact to download |
 | mirror_url    | Mirror to download the solr artifacts from (e.g. http://lib-solr-mirror.princeton.edu/dist/)|
 | version       | Solr version to download and install |
 | port          | port to run Solr on |
 | version_file  | Local path to store the currently installed version |
-| download_dir  | Local path for storing the downloaded Solr zip file |
-| solr_zip_path | Local path to the Solr zip file |
+| download_dir  | Local path for storing the downloaded Solr tgz file |
+| artifact_path | Local path to the Solr tgz file |
 | checksum      | Path/URL to checksum |
 | solr_xml      | Path to Solr configuration |
 | verbose       | (Boolean) |
