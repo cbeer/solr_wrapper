@@ -36,6 +36,7 @@ module SolrWrapper
     # @option options [String] :config
     def initialize(options = {})
       @config = Settings.new(Configuration.new(options))
+      @started = false
     end
 
     def host
@@ -63,7 +64,7 @@ module SolrWrapper
       start
       yield self
     ensure
-      stop
+      stop if @started
     end
 
     ##
@@ -72,6 +73,8 @@ module SolrWrapper
       extract_and_configure
       if managed?
         exec('start', p: port, c: config.cloud)
+
+        @started = true
 
         # Wait for solr to start
         unless status
