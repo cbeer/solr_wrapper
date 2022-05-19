@@ -149,6 +149,10 @@ module SolrWrapper
       options.fetch(:poll_interval, 1)
     end
 
+    def tmp_save_dir
+      options[:tmp_save_dir]
+    end
+
     private
 
       def self.slice(source, *keys)
