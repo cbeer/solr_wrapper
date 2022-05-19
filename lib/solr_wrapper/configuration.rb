@@ -54,8 +54,8 @@ module SolrWrapper
       options[:zookeeper_port]
     end
 
-    def solr_zip_path
-      options[:solr_zip_path]
+    def artifact_path
+      options[:artifact_path]
     end
 
     def download_dir
@@ -93,13 +93,21 @@ module SolrWrapper
       end
     end
 
+    def mirror_artifact_path
+      if version > '9'
+        "solr/solr/#{version}/solr-#{version}.tgz"
+      else
+        "lucene/solr/#{version}/solr-#{version}.tgz"
+      end
+    end
+
     def closest_mirror_url
-      "https://www.apache.org/dyn/closer.lua/lucene/solr/#{version}/solr-#{version}.zip?asjson=true"
+      "https://www.apache.org/dyn/closer.lua/#{mirror_artifact_path}?asjson=true"
     end
 
     def mirror_url
       @mirror_url ||= if options[:mirror_url]
-        options[:mirror_url] + "lucene/solr/#{version}/solr-#{version}.zip"
+        options[:mirror_url] + mirror_artifact_path
       else
         begin
           json = HTTP.follow.get(closest_mirror_url).body
@@ -120,7 +128,7 @@ module SolrWrapper
     end
 
     def archive_download_url
-      "https://archive.apache.org/dist/lucene/solr/#{version}/solr-#{version}.zip"
+      "https://archive.apache.org/dist/#{mirror_artifact_path}"
     end
 
     def cloud

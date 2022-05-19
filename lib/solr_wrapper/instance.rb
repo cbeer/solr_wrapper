@@ -6,10 +6,10 @@ require 'securerandom'
 require 'socket'
 require 'stringio'
 require 'tmpdir'
-require 'zip'
 require 'erb'
 require 'yaml'
 require 'retriable'
+require 'solr_wrapper/tgz_extractor'
 
 module SolrWrapper
   class Instance
@@ -23,9 +23,9 @@ module SolrWrapper
     # @option options [String] :port port to run Solr on
     # @option options [Boolean] :cloud Run solr in cloud mode
     # @option options [String] :version_file Local path to store the currently installed version
-    # @option options [String] :download_dir Local directory to store the downloaded Solr zip and its checksum file in (overridden by :solr_zip_path)
-    # @option options [String] :solr_zip_path Local path for storing the downloaded Solr zip file
-    # @option options [Boolean] :validate Should solr_wrapper download a new checksum and (re-)validate the zip file? (default: trueF)
+    # @option options [String] :download_dir Local directory to store the downloaded Solr artifact and its checksum file in (overridden by :artifact_path)
+    # @option options [String] :artifact_path Local path for storing the downloaded Solr artifact file
+    # @option options [Boolean] :validate Should solr_wrapper download a new checksum and (re-)validate the tgz file? (default: true)
     # @option options [String] :checksum Path/URL to checksum
     # @option options [String] :solr_xml Path to Solr configuration
     # @option options [String] :extra_lib_dir Path to directory containing extra libraries to copy into instance_dir/lib
@@ -255,25 +255,13 @@ module SolrWrapper
     def extract
       return config.instance_dir if extracted?
 
-      zip_path = download
+      downloaded_artifact_path = download
 
-      begin
-        Zip::File.open(zip_path) do |zip_file|
-          # Handle entries one by one
-          zip_file.each do |entry|
-            dest_file = File.join(config.tmp_save_dir, entry.name)
-            FileUtils.remove_entry(dest_file, true)
-            entry.extract(dest_file)
-          end
-        end
-
-      rescue Exception => e
-        abort "Unable to unzip #{zip_path} into #{config.tmp_save_dir}: #{e.message}"
-      end
+      SolrWrapper::TgzExtractor.new(downloaded_artifact_path, destination: config.tmp_save_dir).extract!
 
       begin
         FileUtils.remove_dir(config.instance_dir, true)
-        FileUtils.cp_r File.join(config.tmp_save_dir, File.basename(config.download_url, ".zip")), config.instance_dir
+        FileUtils.cp_r File.join(config.tmp_save_dir, File.basename(config.download_url, '.tgz')), config.instance_dir
         self.extracted_version = config.version
         FileUtils.chmod 0755, config.solr_binary
       rescue Exception => e
@@ -297,11 +285,11 @@ module SolrWrapper
     end
 
     def download
-      unless File.exist?(config.solr_zip_path) && checksum_validator.validate?(config.solr_zip_path)
-        Downloader.fetch_with_progressbar config.download_url, config.solr_zip_path
-        checksum_validator.validate! config.solr_zip_path
+      unless File.exist?(config.downloaded_artifact_path) && checksum_validator.validate?(config.downloaded_artifact_path)
+        Downloader.fetch_with_progressbar config.download_url, config.downloaded_artifact_path
+        checksum_validator.validate! config.downloaded_artifact_path
       end
-      config.solr_zip_path
+      config.downloaded_artifact_path
     end
 
     ##

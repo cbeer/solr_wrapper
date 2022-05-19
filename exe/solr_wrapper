@@ -39,8 +39,8 @@ args = OptionParser.new do |opts|
     options[:cloud] = c
   end
 
-  opts.on("--solr_zip_path PATH", "Download/use solr at the given path") do |d|
-    options[:solr_zip_path] = d
+  opts.on("--artifact_path PATH", "Download/use solr at the given path") do |d|
+    options[:artifact_path] = d
   end
 
   opts.on("-iDIR", "--instance_directory DIR", "Install/use solr at the given directory") do |d|

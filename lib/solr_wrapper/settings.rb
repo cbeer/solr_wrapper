@@ -50,7 +50,7 @@ module SolrWrapper
 
     def instance_dir
       @instance_dir ||= static_config.instance_dir
-      @instance_dir ||= File.join(tmpdir, File.basename(download_url, ".zip"))
+      @instance_dir ||= File.join(tmpdir, File.basename(download_url, ".tgz"))
     end
 
     def managed?
@@ -62,9 +62,9 @@ module SolrWrapper
       @download_url ||= default_download_url
     end
 
-    def solr_zip_path
-      @solr_zip_path ||= static_config.solr_zip_path
-      @solr_zip_path ||= default_solr_zip_path
+    def downloaded_artifact_path
+      @downloaded_artifact_path ||= static_config.artifact_path
+      @downloaded_artifact_path ||= default_solr_artifact_path
     end
 
     def version_file
@@ -93,7 +93,7 @@ module SolrWrapper
         end
       end
 
-      def default_solr_zip_path
+      def default_solr_artifact_path
         File.join(download_dir, File.basename(download_url))
       end
 
