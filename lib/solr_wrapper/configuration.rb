@@ -157,6 +157,10 @@ module SolrWrapper
       options.fetch(:poll_interval, 1)
     end
 
+    def contrib
+      options.fetch(:contrib, [])
+    end
+
     private
 
       def self.slice(source, *keys)
@@ -182,11 +186,22 @@ module SolrWrapper
           $stderr.puts "Unable to parse config #{config_file}" if verbose?
           return {}
         end
-        convert_keys(config)
+        config.transform_keys(&:to_sym)
+        absoluteize_paths(config, root: File.dirname(config_file))
       end
 
-      def convert_keys(hash)
-        hash.each_with_object({}) { |(k, v), h| h[k.to_sym] = v }
+      def absoluteize_paths(config, root: Dir.pwd)
+        return config unless config[:contrib]
+
+        config = config.dup
+
+        config[:contrib] = config[:contrib].map do |mapping|
+          mapping = mapping.transform_keys(&:to_sym)
+          mapping[:from] = File.expand_path(mapping[:from], root)
+          mapping[:to] ||= 'contrib/'
+        end
+
+        config
       end
 
       def default_configuration_paths

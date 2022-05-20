@@ -244,6 +244,14 @@ module SolrWrapper
       raise_error_unless_extracted
       FileUtils.cp config.solr_xml, File.join(config.instance_dir, 'server', 'solr', 'solr.xml') if config.solr_xml
       FileUtils.cp_r File.join(config.extra_lib_dir, '.'), File.join(config.instance_dir, 'server', 'solr', 'lib') if config.extra_lib_dir
+
+      config.contrib.each do |mapping|
+        if File.directory? mapping[:from]
+          FileUtils.cp_r mapping[:from], File.join(config.instance_dir, mapping[:to])
+        else
+          FileUtils.cp mapping[:from], File.join(config.instance_dir, mapping[:to])
+        end
+      end
     end
 
     def extract_and_configure
