@@ -145,12 +145,12 @@ module SolrWrapper
 
     def collection_options
       hash = options.fetch(:collection, {})
-      Configuration.slice(convert_keys(hash), :name, :dir, :persist)
+      Configuration.slice(hash.transform_keys(&:to_sym), :name, :dir, :persist)
     end
 
     def configsets
       configsets = options[:configsets] || []
-      configsets.map { |x| convert_keys(x) }
+      configsets.map { |x| x.transform_keys(&:to_sym) }
     end
 
     def poll_interval
