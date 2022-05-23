@@ -19,6 +19,7 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   spec.add_dependency "http"
+  spec.add_dependency "minitar"
   spec.add_dependency "ruby-progressbar"
   spec.add_dependency "retriable"
 
