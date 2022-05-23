@@ -186,7 +186,8 @@ module SolrWrapper
           $stderr.puts "Unable to parse config #{config_file}" if verbose?
           return {}
         end
-        config.transform_keys(&:to_sym)
+
+        config.transform_keys!(&:to_sym)
         absoluteize_paths(config, root: File.dirname(config_file))
       end
 
