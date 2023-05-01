@@ -1,6 +1,3 @@
-require 'coveralls'
-Coveralls.wear!
-
 require 'solr_wrapper'
 require 'simple_solr_client'
 
