@@ -7,6 +7,8 @@ module SolrWrapper
       pbar = SafeProgressBar.new(title: File.basename(url), total: nil, format: '%t: |%B| %p%% (%e )')
 
       response = HTTP.follow.get(url)
+      raise SolrWrapperError, "Unable to download from #{url}, (#{response.status})" unless response.status.success?
+      
       pbar.total = response.headers['content-length'].to_i
 
       File.open(output, 'wb') do |f|
