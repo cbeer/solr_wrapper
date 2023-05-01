@@ -24,7 +24,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency "retriable"
 
   spec.add_development_dependency "bundler", ">= 1.7", "< 3"
-  spec.add_development_dependency "rake", "~> 10.0", "< 13"
+  spec.add_development_dependency "rake", ">= 12.2", "< 14"
 
   spec.add_development_dependency "rspec"
   spec.add_development_dependency "simple_solr_client", "= 0.2.0" # 0.2.1 removed support for schema retrieval
