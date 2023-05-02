@@ -67,6 +67,10 @@ args = OptionParser.new do |opts|
     options[:ignore_checksum] = true
   end
 
+  opts.on("--debug", "Output configuration parameters and exit") do |d|
+    options[:debug] = true
+  end
+
   opts.separator ""
   opts.separator subtext
 end
@@ -97,6 +101,11 @@ rescue => error
 end
 
 instance = SolrWrapper.instance(options)
+
+if instance.debug?
+  puts instance.as_json
+  exit(0)
+end
 
 case command
 when 'clean'

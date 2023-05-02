@@ -7,8 +7,11 @@ module SolrWrapper
     def initialize(options = {})
       @config = options[:config]
       @verbose = options[:verbose]
-
       @options = load_configs(Array(options[:config])).merge(options)
+    end
+
+    def debug?
+      @debug
     end
 
     def solr_xml
