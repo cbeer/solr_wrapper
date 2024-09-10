@@ -12,9 +12,9 @@ jobs:
     strategy:
       matrix:
         ruby:
-          - 2.7
-          - 3.0
-          - jruby-9.2.20.0
+          - '3.2.5'
+          - '3.3.4'
+          - jruby-9.4.8.0
     steps:
     - uses: actions/checkout@v3
     - name: Set up Ruby
