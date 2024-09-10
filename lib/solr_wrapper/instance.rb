@@ -146,7 +146,12 @@ module SolrWrapper
     def create(options = {})
       options[:name] ||= SecureRandom.hex
 
-      create_options = { p: port }
+      create_options = {}
+      if version >= '9.7'
+        create_options[:url] = config.base_url
+      else
+        create_options[:p] = port
+      end
       create_options[:c] = options[:name] if options[:name]
       create_options[:n] = options[:config_name] if options[:config_name]
       create_options[:d] = options[:dir] if options[:dir]
@@ -203,7 +208,15 @@ module SolrWrapper
     # Create a new collection in solr
     # @param [String] name collection name
     def delete(name, _options = {})
-      exec("delete", c: name, p: port)
+      delete_options = { c: name }
+
+      if version >= '9.7'
+        delete_options[:url] = config.base_url
+      else
+        delete_options[:p] = port
+      end
+
+      exec("delete", delete_options)
     end
 
     ##
