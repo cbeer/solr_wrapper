@@ -144,28 +144,52 @@ module SolrWrapper
     # @option options [String] :name
     # @option options [String] :dir
     def create(options = {})
-      options[:name] ||= SecureRandom.hex
+      tmpdir = nil
 
-      create_options = {}
-      if version >= '9.7'
-        create_options[:url] = config.base_url
-      else
-        create_options[:p] = port
+      begin
+        options[:name] ||= SecureRandom.hex
+
+        create_options = {}
+        if version >= '9.7'
+          create_options[:url] = config.base_url
+        else
+          create_options[:p] = port
+        end
+        create_options[:c] = options[:name] if options[:name]
+        create_options[:n] = options[:config_name] if options[:config_name]
+
+        if options[:dir]
+          # Solr 9.7 required that the dir argument contain a `conf` directory that
+          # contains the actual configuration files.
+          if version >= '9.7' && !File.exist?(File.join(options[:dir], 'conf'))
+
+            if options[:dir].match?(/conf\/$/)
+              create_options[:d] = File.expand_path(options[:dir], '..')
+            else
+              tmpdir = Dir.mktmpdir
+
+              FileUtils.mkdir("#{tmpdir}/conf")
+              FileUtils.cp_r("#{options[:dir]}/.", "#{tmpdir}/conf")
+              create_options[:d] = tmpdir
+            end
+          else
+            create_options[:d] = options[:dir]
+          end
+        end
+
+        Retriable.retriable do
+          raise "Not started yet" unless started?
+        end
+
+        # short-circuit if we're using persisted data with an existing core/collection
+        return if options[:persist] && create_options[:c] && client.exists?(create_options[:c])
+
+        exec("create", create_options)
+
+        options[:name]
+      ensure
+        FileUtils.remove_entry tmpdir if tmpdir
       end
-      create_options[:c] = options[:name] if options[:name]
-      create_options[:n] = options[:config_name] if options[:config_name]
-      create_options[:d] = options[:dir] if options[:dir]
-
-      Retriable.retriable do
-        raise "Not started yet" unless started?
-      end
-
-      # short-circuit if we're using persisted data with an existing core/collection
-      return if options[:persist] && create_options[:c] && client.exists?(create_options[:c])
-
-      exec("create", create_options)
-
-      options[:name]
     end
 
     ##
