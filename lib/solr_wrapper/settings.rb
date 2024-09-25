@@ -42,10 +42,14 @@ module SolrWrapper
       @zookeeper_port ||= "#{port.to_i + 1000}"
     end
 
+    def base_url
+      "http://#{host}:#{port}/"
+    end
+
     ##
     # Get a (likely) URL to the solr instance
     def url
-      "http://#{host}:#{port}/solr/"
+      "#{base_url}solr/"
     end
 
     def instance_dir

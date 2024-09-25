@@ -1,7 +1,8 @@
 require 'spec_helper'
 
 describe SolrWrapper::Configuration do
-  let(:config) { described_class.new options }
+  let(:config) { described_class.new default_options.merge(options) }
+  let(:default_options) { { env: {} } }
 
   describe "#port" do
     subject { config.port }

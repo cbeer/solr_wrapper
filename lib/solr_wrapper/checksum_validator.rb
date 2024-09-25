@@ -13,13 +13,16 @@ module SolrWrapper
 
     def validate?(file)
       return true if config.validate == false
-      Digest.const_get(algorithm.upcase).file(file).hexdigest == expected_sum(algorithm)
+
+      actual_sum(file) == expected_sum
     end
 
     def validate!(file)
-      unless validate? file
-        raise "Checksum mismatch" unless config.ignore_checksum
-      end
+      return if validate?(file)
+
+      return if config.ignore_checksum || defined?(JRUBY_VERSION)
+
+      raise "Checksum mismatch: #{file} (expected(#{expected_sum}) != actual(#{actual_sum(file)})"
     end
 
     private
@@ -36,8 +39,12 @@ module SolrWrapper
         File.join(config.download_dir, File.basename(checksumurl(suffix)))
       end
 
-      def expected_sum(alg)
-        config.checksum || read_file(alg)
+      def actual_sum(file)
+        Digest.const_get(algorithm.upcase).file(file).hexdigest
+      end
+
+      def expected_sum
+        config.checksum || read_file(algorithm)
       end
 
       def read_file(alg)
