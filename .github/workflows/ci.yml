@@ -15,6 +15,14 @@ jobs:
           - '3.2.5'
           - '3.3.4'
           - jruby-9.4.8.0
+        solr_version: ['']
+        include:
+          - ruby: '3.3.4'
+            solr_version: '8.11.4'
+          - ruby: '3.3.4'
+            solr_version: '9.6.1'
+    env:
+      SOLR_WRAPPER_SOLR_VERSION: ${{ matrix.solr_version }}
     steps:
     - uses: actions/checkout@v3
     - name: Set up Ruby

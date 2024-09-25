@@ -10,6 +10,7 @@ module SolrWrapper
       @verbose = options[:verbose]
 
       @options = load_configs(Array(options[:config])).merge(options)
+      @options[:env] ||= ENV
     end
 
     def solr_xml
@@ -85,7 +86,12 @@ module SolrWrapper
 
     def version
       @version ||= begin
-        config_version = options.fetch(:version, SolrWrapper.default_instance_options[:version])
+        config_version = if env_options[:version].nil? || env_options[:version].empty?
+          options.fetch(:version, SolrWrapper.default_instance_options[:version])
+        else
+          env_options[:version]
+        end
+
         if config_version == 'latest'
           fetch_latest_version
         else
@@ -225,6 +231,15 @@ module SolrWrapper
 
         response = client.get
         response.body.to_s[/Solr \d+\.\d+\.\d+/][/\d+\.\d+\.\d+/]
+      end
+
+      def env_options
+        @env_options ||= begin
+          env = options.fetch(:env, {})
+          {
+            version: env['SOLR_WRAPPER_SOLR_VERSION']
+          }
+        end
       end
   end
 end
