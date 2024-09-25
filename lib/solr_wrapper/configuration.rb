@@ -1,4 +1,5 @@
-require 'http'
+require 'faraday'
+require 'faraday/follow_redirects'
 
 module SolrWrapper
   class Configuration
@@ -110,18 +111,23 @@ module SolrWrapper
         options[:mirror_url] + mirror_artifact_path
       else
         begin
-          json = HTTP.follow.get(closest_mirror_url).body
+          client = Faraday.new(closest_mirror_url) do |faraday|
+            faraday.use Faraday::FollowRedirects::Middleware
+            faraday.adapter Faraday.default_adapter
+          end
+
+          json = client.get.body
           doc = JSON.parse(json)
           url = doc['preferred'] + doc['path_info']
 
-          response = HTTP.head(url)
+          response = Faraday.head(url)
 
-          if response.status.success?
+          if response.success?
             url
           else
             archive_download_url
           end
-        rescue Errno::ECONNRESET, SocketError, HTTP::Error
+        rescue Errno::ECONNRESET, SocketError, Faraday::Error
           archive_download_url
         end
       end
@@ -210,7 +216,14 @@ module SolrWrapper
       end
 
       def fetch_latest_version
-        response = HTTP.follow.get(options.fetch(:latest_version_url, 'https://solr.apache.org/downloads.html'))
+        url = options.fetch(:latest_version_url, 'https://solr.apache.org/downloads.html')
+
+        client = Faraday.new(url) do |faraday|
+          faraday.use Faraday::FollowRedirects::Middleware
+          faraday.adapter Faraday.default_adapter
+        end
+
+        response = client.get
         response.body.to_s[/Solr \d+\.\d+\.\d+/][/\d+\.\d+\.\d+/]
       end
   end

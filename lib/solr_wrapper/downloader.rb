@@ -1,23 +1,29 @@
 require 'ruby-progressbar'
-require 'http'
+require 'faraday'
+require 'faraday/follow_redirects'
 
 module SolrWrapper
   class Downloader
     def self.fetch_with_progressbar(url, output)
       pbar = SafeProgressBar.new(title: File.basename(url), total: nil, format: '%t: |%B| %p%% (%e )')
 
-      response = HTTP.follow.get(url)
-      pbar.total = response.headers['content-length'].to_i
+      client = Faraday.new(url) do |faraday|
+        faraday.use Faraday::FollowRedirects::Middleware
+        faraday.adapter Faraday.default_adapter
+      end
 
       File.open(output, 'wb') do |f|
-        response.body.each do |chunk|
-          f.write(chunk)
-          pbar.progress += chunk.length
+        client.get do |req|
+          req.options.on_data = Proc.new do |chunk, overall_received_bytes, env|
+            pbar.total = env.response_headers['content-length'].to_i
+            pbar.progress = overall_received_bytes
+            f.write(chunk)
+          end
         end
-
-        nil
       end
-    rescue HTTP::Error => e
+
+      true
+    rescue Faraday::Error => e
       raise SolrWrapperError, "Unable to download solr from #{url}\n#{e}"
     end
 
