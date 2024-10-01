@@ -18,7 +18,7 @@ Gem::Specification.new do |spec|
   spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})
   spec.require_paths = ["lib"]
 
-  spec.add_dependency "faraday"
+  spec.add_dependency "faraday", "~> 2.5"
   spec.add_dependency "faraday-follow_redirects"
   spec.add_dependency "minitar"
   spec.add_dependency "ruby-progressbar"
