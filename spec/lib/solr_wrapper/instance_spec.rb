@@ -135,7 +135,7 @@ describe SolrWrapper::Instance do
       let(:cmd) { 'healthcheck' }
       let(:options) { { z: 'localhost:5098' } }
       it 'raises an error with the output from the shell command' do
-        expect { subject }.to raise_error(RuntimeError, /Failed to execute solr healthcheck: collection parameter is required!/)
+        expect { subject }.to raise_error(RuntimeError, Regexp.union(/Failed to execute solr healthcheck: collection parameter is required!/, /Failed to parse command-line arguments due to: Missing required option: c/))
       end
     end
   end
