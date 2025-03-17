@@ -17,7 +17,7 @@ module SolrWrapper
     private
 
     def argument_list
-      [config.solr_binary, cmd] + config.solr_options.merge(options).map do |k, v|
+      [config.solr_binary] + Array(cmd) + config.solr_options.merge(options).map do |k, v|
         case v
         when true
           "-#{k}"

@@ -15,7 +15,13 @@ module SolrWrapper
       File.open(output, 'wb') do |f|
         client.get do |req|
           req.options.on_data = Proc.new do |chunk, overall_received_bytes, env|
-            pbar.total = env.response_headers['content-length'].to_i
+            if env
+              pbar.total = env.response_headers['content-length'].to_i
+              pbar.progress = overall_received_bytes
+            else
+              pbar.increment
+            end
+
             pbar.progress = overall_received_bytes
             f.write(chunk)
           end

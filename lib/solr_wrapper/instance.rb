@@ -201,11 +201,11 @@ module SolrWrapper
       options[:name] ||= SecureRandom.hex
       options[:zkhost] ||= zkhost
 
-      upconfig_options = { upconfig: true, n: options[:name] }
+      upconfig_options = { n: options[:name] }
       upconfig_options[:d] = options[:dir] if options[:dir]
       upconfig_options[:z] = options[:zkhost] if options[:zkhost]
 
-      exec 'zk', upconfig_options
+      exec ['zk', 'upconfig'], upconfig_options
 
       options[:name]
     end
@@ -219,11 +219,11 @@ module SolrWrapper
       options[:name] ||= SecureRandom.hex
       options[:zkhost] ||= zkhost
 
-      downconfig_options = { downconfig: true, n: options[:name] }
+      downconfig_options = { n: options[:name] }
       downconfig_options[:d] = options[:dir] if options[:dir]
       downconfig_options[:z] = options[:zkhost] if options[:zkhost]
 
-      exec 'zk', downconfig_options
+      exec ['zk', 'downconfig'], downconfig_options
 
       options[:name]
     end
