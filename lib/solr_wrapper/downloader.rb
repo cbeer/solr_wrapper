@@ -22,7 +22,6 @@ module SolrWrapper
               pbar.increment
             end
 
-            pbar.progress = overall_received_bytes
             f.write(chunk)
           end
         end
