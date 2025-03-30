@@ -61,7 +61,7 @@ module SolrWrapper
     end
 
     def download_dir
-      options[:download_dir] || default_download_dir
+      env_options[:download_dir] || options[:download_dir] || default_download_dir
     end
 
     def default_download_dir
@@ -237,6 +237,7 @@ module SolrWrapper
         @env_options ||= begin
           env = options.fetch(:env, {})
           {
+            download_dir: env['SOLR_WRAPPER_DOWNLOAD_DIR'],
             version: env['SOLR_WRAPPER_SOLR_VERSION']
           }
         end
