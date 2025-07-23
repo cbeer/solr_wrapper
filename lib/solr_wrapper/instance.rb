@@ -167,9 +167,9 @@ module SolrWrapper
           # Solr 9.7 required that the dir argument contain a `conf` directory that
           # contains the actual configuration files.
           if version >= '9.7' && !File.exist?(File.join(options[:dir], 'conf'))
-
-            if options[:dir].match?(/conf\/$/)
-              create_options[:d] = File.expand_path(options[:dir], '..')
+            # ends in `conf` or `conf/`
+            if options[:dir].match?(/conf\/?$/)
+              create_options[:d] = File.expand_path("..", options[:dir])
             else
               tmpdir = Dir.mktmpdir
 
