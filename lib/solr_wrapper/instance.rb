@@ -162,7 +162,7 @@ module SolrWrapper
           # Turn a relative path to absolute. Solr 9.7+ changes relative to be
           # relative to solr instance dir (which can be a temp dir for us),
           # instead of command CWD. Normalize to absolute is good for all.
-          options[:dir] = File.expand_path(".", options[:dir])
+          options[:dir] = File.absolute_path(options[:dir])
 
           # Solr 9.7 required that the dir argument contain a `conf` directory that
           # contains the actual configuration files.
