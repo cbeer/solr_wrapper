@@ -159,12 +159,17 @@ module SolrWrapper
         create_options[:n] = options[:config_name] if options[:config_name]
 
         if options[:dir]
+          # Turn a relative path to absolute. Solr 9.7+ changes relative to be
+          # relative to solr instance dir (which can be a temp dir for us),
+          # instead of command CWD. Normalize to absolute is good for all.
+          options[:dir] = File.absolute_path(options[:dir])
+
           # Solr 9.7 required that the dir argument contain a `conf` directory that
           # contains the actual configuration files.
           if version >= '9.7' && !File.exist?(File.join(options[:dir], 'conf'))
-
-            if options[:dir].match?(/conf\/$/)
-              create_options[:d] = File.expand_path(options[:dir], '..')
+            # ends in `conf` or `conf/`
+            if options[:dir].match?(/conf\/?$/)
+              create_options[:d] = File.expand_path("..", options[:dir])
             else
               tmpdir = Dir.mktmpdir
 
