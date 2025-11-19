@@ -150,7 +150,9 @@ module SolrWrapper
         options[:name] ||= SecureRandom.hex
 
         create_options = {}
-        if version >= '9.7'
+        if greater_than_solr98?
+          create_options[:s] = config.base_url
+        elsif greater_than_solr97?
           create_options[:url] = config.base_url
         else
           create_options[:p] = port
@@ -166,7 +168,7 @@ module SolrWrapper
 
           # Solr 9.7 required that the dir argument contain a `conf` directory that
           # contains the actual configuration files.
-          if version >= '9.7' && !File.exist?(File.join(options[:dir], 'conf'))
+          if greater_than_solr97? && !File.exist?(File.join(options[:dir], 'conf'))
             # ends in `conf` or `conf/`
             if options[:dir].match?(/conf\/?$/)
               create_options[:d] = File.expand_path("..", options[:dir])
@@ -239,7 +241,9 @@ module SolrWrapper
     def delete(name, _options = {})
       delete_options = { c: name }
 
-      if version >= '9.7'
+      if greater_than_solr98?
+        delete_options[:s] = config.base_url
+      elsif greater_than_solr97?
         delete_options[:url] = config.base_url
       else
         delete_options[:p] = port
@@ -393,6 +397,18 @@ module SolrWrapper
       File.open(config.version_file, "w") do |f|
         f.puts version
       end
+    end
+
+    def greater_than_solr97?
+      Gem::Version.new(version) >= Gem::Version.new('9.7.0')
+    rescue ArgumentError
+      true
+    end
+
+    def greater_than_solr98?
+      Gem::Version.new(version) >= Gem::Version.new('9.8.0')
+    rescue ArgumentError
+      true
     end
 
     def zkhost
