@@ -101,7 +101,7 @@ module SolrWrapper
     end
 
     def mirror_artifact_path
-      if version > '9'
+      if version > '9' || version.start_with?(/1\d/)
         "solr/solr/#{version}/solr-#{version}.tgz"
       else
         "lucene/solr/#{version}/solr-#{version}.tgz"
