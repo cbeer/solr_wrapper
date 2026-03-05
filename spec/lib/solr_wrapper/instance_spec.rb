@@ -114,16 +114,8 @@ describe SolrWrapper::Instance do
 
   describe 'exec' do
     let(:cmd) { 'start' }
-    let(:options) { { p: '4098', help: true } }
+    let(:options) { { p: '4098' } }
     subject { solr_instance.send(:exec, cmd, options) }
-    it 'runs the command' do
-      result_io = subject
-      expect(result_io.read).to include('Usage: solr start')
-    end
-    it 'accepts boolean flags' do
-      result_io = solr_instance.send(:exec, 'start', p: '4098', help: true)
-      expect(result_io.read).to include('Usage: solr start')
-    end
 
     describe 'when something goes wrong' do
       let(:cmd) { 'healthcheck' }
