@@ -118,7 +118,7 @@ module SolrWrapper
       else
         begin
           client = Faraday.new(closest_mirror_url) do |faraday|
-            faraday.use Faraday::FollowRedirects::Middleware
+            faraday.response :follow_redirects
             faraday.adapter Faraday.default_adapter
           end
 

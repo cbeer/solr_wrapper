@@ -8,7 +8,7 @@ module SolrWrapper
       pbar = SafeProgressBar.new(title: File.basename(url), total: nil, format: '%t: |%B| %p%% (%e )')
 
       client = Faraday.new(url) do |faraday|
-        faraday.use Faraday::FollowRedirects::Middleware
+        faraday.response :follow_redirects
         faraday.adapter Faraday.default_adapter
       end
 
