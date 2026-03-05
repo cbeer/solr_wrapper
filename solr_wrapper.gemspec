@@ -29,6 +29,5 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "rake", ">= 12.2", "< 14"
 
   spec.add_development_dependency "rspec"
-  spec.add_development_dependency "simple_solr_client", "= 0.2.0" # 0.2.1 removed support for schema retrieval
   spec.add_development_dependency "webmock"
 end

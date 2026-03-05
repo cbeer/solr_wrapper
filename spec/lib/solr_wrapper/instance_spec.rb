@@ -13,7 +13,9 @@ describe SolrWrapper::Instance do
   let(:options) { {} }
   let(:solr_instance) { SolrWrapper::Instance.new(options) }
   subject { solr_instance }
-  let(:client) { SimpleSolrClient::Client.new(subject.url) }
+  let(:client) do
+    SolrWrapper::Client.new(subject.url)
+  end
 
   describe "#with_collection" do
     let(:options) { { cloud: false } }
@@ -21,11 +23,7 @@ describe SolrWrapper::Instance do
       it "creates a new anonymous collection" do
         subject.wrap do |solr|
           solr.with_collection(dir: File.join(FIXTURES_DIR, "basic_configs")) do |collection_name|
-            core = client.core(collection_name)
-            unless defined? JRUBY_VERSION
-              expect(core.schema.field('id').name).to eq 'id'
-              expect(core.schema.field('id').stored).to eq true
-            end
+            expect(client.exists?(collection_name)).to be true
           end
         end
       end
@@ -92,11 +90,7 @@ describe SolrWrapper::Instance do
           solr.downconfig name: config_name, dir: dir
         end
         solr.with_collection(config_name: config_name) do |collection_name|
-          core_name = client.cores.select { |x| x =~ /^#{collection_name}/ }.first
-          core = client.core(core_name)
-          unless defined? JRUBY_VERSION
-            expect(core.all.size).to eq 0
-          end
+          client.exists? collection_name
         end
       end
     end

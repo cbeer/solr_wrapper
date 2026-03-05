@@ -5,6 +5,7 @@ describe SolrWrapper::Client do
 
   describe '#exists?' do
     it 'checks if a solrcloud collection exists' do
+      stub_request(:get, 'http://localhost:8983/v2/collections').to_return(status: 404)
       stub_request(:get, 'http://localhost:8983/solr/admin/collections?action=LIST&wt=json').to_return(body: '{ "collections": ["x", "y", "z"]}')
       stub_request(:get, 'http://localhost:8983/solr/admin/cores?action=STATUS&wt=json&core=a').to_return(body: '{ "status": { "a": {} } }')
 
@@ -13,6 +14,7 @@ describe SolrWrapper::Client do
     end
 
     it 'checks if a solr core exists' do
+      stub_request(:get, 'http://localhost:8983/v2/collections').to_return(status: 404)
       stub_request(:get, 'http://localhost:8983/solr/admin/collections?action=LIST&wt=json').to_return(body: '{ "error": { "msg": "Solr instance is not running in SolrCloud mode."} }')
 
       stub_request(:get, 'http://localhost:8983/solr/admin/cores?action=STATUS&wt=json&core=x').to_return(body: '{ "status": { "x": { "name": "x" } } }')
