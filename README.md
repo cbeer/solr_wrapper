@@ -62,6 +62,14 @@ To see a list of valid options when using solr_wrapper to launch a Solr instance
 $ solr_wrapper -h
 ```
 
+### Valid environment variables
+|Option         |                                         |
+|---------------|-----------------------------------------|
+| SOLR_WRAPPER_DOWNLOAD_DIR  | Local path for storing the downloaded Solr tgz file |
+| SOLR_WRAPPER_SOLR_VERSION  | Solr version to download and install|
+
+
+
 ### Configuration file
 SolrWrapper can read configuration options from a YAML configuration file.
 By default, it looks for configuration files at `.solr_wrapper` and `~/.solr_wrapper`.
