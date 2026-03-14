@@ -17,12 +17,18 @@ describe SolrWrapper::Instance do
     SolrWrapper::Client.new(subject.url)
   end
 
+  let(:config_dir) do
+    version = solr_instance.config.version
+
+    version.start_with?(/1\d/) ? File.join(FIXTURES_DIR, 'basic_configs_v10') : File.join(FIXTURES_DIR, 'basic_configs_v9')
+  end
+
   describe "#with_collection" do
     let(:options) { { cloud: false } }
     context "without a name" do
       it "creates a new anonymous collection" do
         subject.wrap do |solr|
-          solr.with_collection(dir: File.join(FIXTURES_DIR, "basic_configs")) do |collection_name|
+          solr.with_collection(dir: config_dir) do |collection_name|
             expect(client.exists?(collection_name)).to be true
           end
         end
@@ -38,7 +44,7 @@ describe SolrWrapper::Instance do
       it "creates a new collection with options from the config" do
         expect(solr_instance).to receive(:create).with(
           hash_including(name: "project-development", dir: anything))
-        solr_instance.with_collection(dir: File.join(FIXTURES_DIR, "basic_configs")) {}
+        solr_instance.with_collection(dir: config_dir) {}
       end
     end
 
@@ -53,11 +59,11 @@ describe SolrWrapper::Instance do
       describe 'single solr node' do
         it 'allows persistent collection on restart' do
           subject.wrap do |solr|
-            solr.with_collection(name: 'solr-node-persistent-core', dir: File.join(FIXTURES_DIR, 'basic_configs'), persist: true) {}
+            solr.with_collection(name: 'solr-node-persistent-core', dir: config_dir, persist: true) {}
           end
 
           subject.wrap do |solr|
-            solr.with_collection(name: 'solr-node-persistent-core', dir: File.join(FIXTURES_DIR, 'basic_configs'), persist: true) {}
+            solr.with_collection(name: 'solr-node-persistent-core', dir: config_dir, persist: true) {}
             solr.delete 'solr-node-persistent-core'
           end
         end
@@ -68,7 +74,7 @@ describe SolrWrapper::Instance do
 
         it 'allows persistent collection on restart' do
           subject.wrap do |solr|
-            config_name = solr.upconfig dir: File.join(FIXTURES_DIR, 'basic_configs')
+            config_name = solr.upconfig dir: config_dir
             solr.with_collection(name: 'solr-cloud-persistent-collection', config_name: config_name, persist: true) {}
           end
 
@@ -85,7 +91,7 @@ describe SolrWrapper::Instance do
     let(:options) { { cloud: true } }
     it 'can upload configurations' do
       subject.wrap do |solr|
-        config_name = solr.upconfig dir: File.join(FIXTURES_DIR, 'basic_configs')
+        config_name = solr.upconfig dir: config_dir
         Dir.mktmpdir do |dir|
           solr.downconfig name: config_name, dir: dir
         end
