@@ -18,16 +18,26 @@ module SolrWrapper
     private
 
     def collection?(name)
-      response = Faraday.get("#{url}admin/collections?action=LIST&wt=json")
-      data = JSON.parse(response.body)
-      return if data['error'] && data['error']['msg'] == 'Solr instance is not running in SolrCloud mode.'
+      response = http.get("/v2/collections")
 
-      data['collections'].include? name
+      if response.success?
+        JSON.parse(response.body)['collections'].include? name
+      else
+        response = http.get("/solr/admin/collections?action=LIST&wt=json")
+        data = JSON.parse(response.body)
+        return if data['error'] && data['error']['msg'] == 'Solr instance is not running in SolrCloud mode.'
+        data['collections'].include? name
+      end
+
     end
 
     def core?(name)
-      response = Faraday.get("#{url}admin/cores?action=STATUS&wt=json&core=#{name}")
+      response = http.get("/solr/admin/cores?action=STATUS&wt=json&core=#{name}")
       !JSON.parse(response.body)['status'][name].empty?
+    end
+
+    def http
+      @http ||= Faraday.new(url)
     end
   end
 end

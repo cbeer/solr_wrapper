@@ -61,7 +61,7 @@ module SolrWrapper
 
       def algorithm
         return config.static_config.algorithm if config.static_config.algorithm
-        return 'sha1' if config.static_config.version =~ /^[1-6]/ || config.static_config.version =~ /^[7]\.[0-4]/
+        return 'sha1' if config.static_config.version =~ /^[1-6]\./ || config.static_config.version =~ /^[7]\.[0-4]/
 
         'sha512'
       end

@@ -1,5 +1,4 @@
 require 'solr_wrapper'
-require 'simple_solr_client'
 
 require 'rspec'
 require 'webmock/rspec'

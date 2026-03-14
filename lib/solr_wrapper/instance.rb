@@ -72,7 +72,7 @@ module SolrWrapper
     def start
       extract_and_configure
       if managed?
-        exec('start', p: port, c: config.cloud)
+        exec('start', p: port, **(extracted_version.start_with?(/1\d/) ? {} : { c: config.cloud }))
 
         @started = true
 
@@ -98,7 +98,7 @@ module SolrWrapper
     # Stop Solr and wait for it to finish exiting
     def restart
       if managed? && started?
-        exec('restart', p: port, c: config.cloud)
+        exec('restart', p: port, **(extracted_version.start_with?(/1\d/) ? {} : { c: config.cloud }))
       end
     end
 

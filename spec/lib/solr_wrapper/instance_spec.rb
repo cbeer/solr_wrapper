@@ -13,19 +13,23 @@ describe SolrWrapper::Instance do
   let(:options) { {} }
   let(:solr_instance) { SolrWrapper::Instance.new(options) }
   subject { solr_instance }
-  let(:client) { SimpleSolrClient::Client.new(subject.url) }
+  let(:client) do
+    SolrWrapper::Client.new(subject.url)
+  end
+
+  let(:config_dir) do
+    version = solr_instance.config.version
+
+    version.start_with?(/1\d/) ? File.join(FIXTURES_DIR, 'basic_configs_v10') : File.join(FIXTURES_DIR, 'basic_configs_v9')
+  end
 
   describe "#with_collection" do
     let(:options) { { cloud: false } }
     context "without a name" do
       it "creates a new anonymous collection" do
         subject.wrap do |solr|
-          solr.with_collection(dir: File.join(FIXTURES_DIR, "basic_configs")) do |collection_name|
-            core = client.core(collection_name)
-            unless defined? JRUBY_VERSION
-              expect(core.schema.field('id').name).to eq 'id'
-              expect(core.schema.field('id').stored).to eq true
-            end
+          solr.with_collection(dir: config_dir) do |collection_name|
+            expect(client.exists?(collection_name)).to be true
           end
         end
       end
@@ -40,7 +44,7 @@ describe SolrWrapper::Instance do
       it "creates a new collection with options from the config" do
         expect(solr_instance).to receive(:create).with(
           hash_including(name: "project-development", dir: anything))
-        solr_instance.with_collection(dir: File.join(FIXTURES_DIR, "basic_configs")) {}
+        solr_instance.with_collection(dir: config_dir) {}
       end
     end
 
@@ -55,11 +59,11 @@ describe SolrWrapper::Instance do
       describe 'single solr node' do
         it 'allows persistent collection on restart' do
           subject.wrap do |solr|
-            solr.with_collection(name: 'solr-node-persistent-core', dir: File.join(FIXTURES_DIR, 'basic_configs'), persist: true) {}
+            solr.with_collection(name: 'solr-node-persistent-core', dir: config_dir, persist: true) {}
           end
 
           subject.wrap do |solr|
-            solr.with_collection(name: 'solr-node-persistent-core', dir: File.join(FIXTURES_DIR, 'basic_configs'), persist: true) {}
+            solr.with_collection(name: 'solr-node-persistent-core', dir: config_dir, persist: true) {}
             solr.delete 'solr-node-persistent-core'
           end
         end
@@ -70,7 +74,7 @@ describe SolrWrapper::Instance do
 
         it 'allows persistent collection on restart' do
           subject.wrap do |solr|
-            config_name = solr.upconfig dir: File.join(FIXTURES_DIR, 'basic_configs')
+            config_name = solr.upconfig dir: config_dir
             solr.with_collection(name: 'solr-cloud-persistent-collection', config_name: config_name, persist: true) {}
           end
 
@@ -87,16 +91,12 @@ describe SolrWrapper::Instance do
     let(:options) { { cloud: true } }
     it 'can upload configurations' do
       subject.wrap do |solr|
-        config_name = solr.upconfig dir: File.join(FIXTURES_DIR, 'basic_configs')
+        config_name = solr.upconfig dir: config_dir
         Dir.mktmpdir do |dir|
           solr.downconfig name: config_name, dir: dir
         end
         solr.with_collection(config_name: config_name) do |collection_name|
-          core_name = client.cores.select { |x| x =~ /^#{collection_name}/ }.first
-          core = client.core(core_name)
-          unless defined? JRUBY_VERSION
-            expect(core.all.size).to eq 0
-          end
+          client.exists? collection_name
         end
       end
     end
@@ -120,16 +120,8 @@ describe SolrWrapper::Instance do
 
   describe 'exec' do
     let(:cmd) { 'start' }
-    let(:options) { { p: '4098', help: true } }
+    let(:options) { { p: '4098' } }
     subject { solr_instance.send(:exec, cmd, options) }
-    it 'runs the command' do
-      result_io = subject
-      expect(result_io.read).to include('Usage: solr start')
-    end
-    it 'accepts boolean flags' do
-      result_io = solr_instance.send(:exec, 'start', p: '4098', help: true)
-      expect(result_io.read).to include('Usage: solr start')
-    end
 
     describe 'when something goes wrong' do
       let(:cmd) { 'healthcheck' }

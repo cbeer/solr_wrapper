@@ -101,7 +101,7 @@ module SolrWrapper
     end
 
     def mirror_artifact_path
-      if version > '9'
+      if version > '9' || version.start_with?(/1\d/)
         "solr/solr/#{version}/solr-#{version}.tgz"
       else
         "lucene/solr/#{version}/solr-#{version}.tgz"
@@ -118,7 +118,7 @@ module SolrWrapper
       else
         begin
           client = Faraday.new(closest_mirror_url) do |faraday|
-            faraday.use Faraday::FollowRedirects::Middleware
+            faraday.response :follow_redirects
             faraday.adapter Faraday.default_adapter
           end
 
