@@ -8,6 +8,7 @@ require 'solr_wrapper/client'
 require 'solr_wrapper/runner'
 require 'solr_wrapper/popen_runner'
 require 'solr_wrapper/popen4_runner'
+require 'solr_wrapper/railtie' if defined?(Rails)
 
 module SolrWrapper
   def self.default_solr_version
